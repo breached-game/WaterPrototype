@@ -115,36 +115,31 @@ public class WaterGrid : MonoBehaviour
         cz = (1 / dz) * ((velocities[d] * velocities[new Vector3Int(0, 0, d[0] * -1)]) - (velocities[d] * velocities[new Vector3Int(0, 0, d[0])]));
         c2 = 0f;
         c3 = 0f;
-        switch (d)
-        {
-            case Vector3Int when d == basisVectors[0]:
-                c2 = cy + cz;
-                c3 = (1 / dx) * (c.GetPressure() - ns[d].GetPressure());
-                break;
-            case Vector3Int when d == basisVectors[1]:
-                c2 = cy + cz;
-                c3 = (1 / dx) * (c.GetPressure() - ns[d].GetPressure());
-                break;
-            case Vector3Int when d == basisVectors[2]:
-                c2 = cx + cz;
-                g = 9.81f;
-                c3 = (1 / dy) * (c.GetPressure() - ns[d].GetPressure());
-                break;
-            case Vector3Int when d == basisVectors[3]:
-                c2 = cx + cz;
-                g = 9.81f;
-                c3 = (1 / dy) * (c.GetPressure() - ns[d].GetPressure());
-                break;
-            case Vector3Int when d == basisVectors[4]:
-                c2 = cy + cx;
-                c3 = (1 / dz) * (c.GetPressure() - ns[d].GetPressure());
-                break;
-            case Vector3Int when d == basisVectors[5]:
-                c2 = cy + cx;
-                c3 = (1 / dz) * (c.GetPressure() - ns[d].GetPressure());
-                break;
-            default:
-                break;
+        if (d == basisVectors[0]) {
+            c2 = cy + cz;
+            c3 = (1 / dx) * (c.GetPressure() - ns[d].GetPressure());
+        }
+        else if (d == basisVectors[1]) {
+            c2 = cy + cz;
+            c3 = (1 / dx) * (c.GetPressure() - ns[d].GetPressure());
+        }
+        else if (d == basisVectors[2]) {
+            c2 = cx + cz;
+            g = 9.81f;
+            c3 = (1 / dy) * (c.GetPressure() - ns[d].GetPressure());
+        }
+        else if (d == basisVectors[3]) {
+            c2 = cx + cz;
+            g = 9.81f;
+            c3 = (1 / dy) * (c.GetPressure() - ns[d].GetPressure());
+        }
+        else if (d == basisVectors[4]) {
+            c2 = cy + cx;
+            c3 = (1 / dz) * (c.GetPressure() - ns[d].GetPressure());
+        }
+        else if (d == basisVectors[5]) {
+            c2 = cy + cx;
+            c3 = (1 / dz) * (c.GetPressure() - ns[d].GetPressure());
         }
         c4 = (vis / Mathf.Pow(dx, 2)) * (GetNeighbour(c, ns, basisVectors[0]).GetVelocities()[d] - 2 * v + GetNeighbour(c, ns, new Vector3Int(-1,0,0)).GetVelocities()[d]);
         c5 = (vis / Mathf.Pow(dy, 2)) * (GetNeighbour(c, ns, basisVectors[2]).GetVelocities()[d] - 2 * v + GetNeighbour(c, ns, basisVectors[3]).GetVelocities()[d]);
