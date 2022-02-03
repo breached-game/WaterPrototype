@@ -55,6 +55,8 @@
   <ItemGroup>
     <Compile Include="Assets\WaterGrid.cs" />
     <Compile Include="Assets\GridCell.cs" />
+    <Compile Include="Assets\Particle.cs" />
+    <Compile Include="Assets\WaterGridController.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="UnityEngine">
