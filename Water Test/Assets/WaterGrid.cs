@@ -15,7 +15,7 @@ public class WaterGrid : MonoBehaviour
     private float beta;
     private float b_0 = 1.7f;
     private float eps = 0.0001f;
-    public Vector3Int inflowLocation;
+    public Vector3 inflowLocation;
     public float inflowVelocity;
     public Vector3Int inflowDirection;
     [SerializeField] private GameObject WaterParticle;
@@ -43,7 +43,7 @@ public class WaterGrid : MonoBehaviour
             {
                 for (int z = 0; z < depth; z++)
                 {
-                    GridCell cell = new GridCell(new Vector3Int(x, y, z), 0f, Contents.Empty);
+                    GridCell cell = new GridCell(new Vector3Int(x, y, z), 0f, Contents.Full);
                     gridArray[x, y, z] = cell;
                     if (inflowLocation[0] == x & inflowLocation[1] == y & inflowLocation[2] == z)
                     {
@@ -127,29 +127,29 @@ public class WaterGrid : MonoBehaviour
         cz = (1 / dz) * ((velocities[d] * velocities[new Vector3Int(0, 0, d[0] * -1)]) - (velocities[d] * velocities[new Vector3Int(0, 0, d[0])]));
         c2 = 0f;
         c3 = 0f;
-        if (d == basisVectors[0]) {
+        if (d.Equals(basisVectors[0])) {
             c2 = cy + cz;
             c3 = (1 / dx) * (c.GetPressure() - ns[d].GetPressure());
         }
-        else if (d == basisVectors[1]) {
+        else if (d.Equals(basisVectors[1])) {
             c2 = cy + cz;
             c3 = (1 / dx) * (c.GetPressure() - ns[d].GetPressure());
         }
-        else if (d == basisVectors[2]) {
+        else if (d.Equals(basisVectors[2])) {
             c2 = cx + cz;
             g = 9.81f;
             c3 = (1 / dy) * (c.GetPressure() - ns[d].GetPressure());
         }
-        else if (d == basisVectors[3]) {
+        else if (d.Equals(basisVectors[3])) {
             c2 = cx + cz;
             g = 9.81f;
             c3 = (1 / dy) * (c.GetPressure() - ns[d].GetPressure());
         }
-        else if (d == basisVectors[4]) {
+        else if (d.Equals(basisVectors[4])) {
             c2 = cy + cx;
             c3 = (1 / dz) * (c.GetPressure() - ns[d].GetPressure());
         }
-        else if (d == basisVectors[5]) {
+        else if (d.Equals(basisVectors[5])) {
             c2 = cy + cx;
             c3 = (1 / dz) * (c.GetPressure() - ns[d].GetPressure());
         }
@@ -254,6 +254,15 @@ public class WaterGrid : MonoBehaviour
                 }
             }
         }
+    }
+
+    private void ParticleVelocityUpdate(Particle p)
+    {
+        Vector3 position = p.getPosition();
+        Vector3Int cellPosition = water_grid.LocalToCell(position);
+        GridCell cell = gridArray[cellPosition[0], cellPosition[1], cellPosition[2]];
+
+
     }
 
     public void FixedUpdate()
