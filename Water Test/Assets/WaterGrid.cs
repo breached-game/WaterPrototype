@@ -285,7 +285,7 @@ public class WaterGrid : MonoBehaviour
         return componentVelocities;
     } 
 
-    private void ParticleVelocityUpdate(Particle p)
+    private Vector3 ParticleVelocityUpdate(Particle p)
     {
         // Calculated in 2D so x + y, y + x, z + y
         Vector3 position = p.getPosition();
@@ -338,11 +338,15 @@ public class WaterGrid : MonoBehaviour
             }
             newVelocities[j] = newVelocities[0] / (componentsVelocities[j].distance.Sum());
         }
+        return new Vector3(newVelocities[0], newVelocities[1], newVelocities[2]);
     }
 
-    private void ParticleLocationUpdate(Particle p, Vector3 v)
+    private void ParticleLocationUpdate(Particle p)
     {
-        Vector3 newPos = p.getPosition() + (v * dt);
+        Vector3 v;
+        Vector3 newPos;
+        v = ParticleVelocityUpdate(p);
+        newPos = p.getPosition() + (v * dt);
         p.UpdatePosition(newPos);
     }
 
