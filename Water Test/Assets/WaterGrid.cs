@@ -43,7 +43,7 @@ public class WaterGrid : MonoBehaviour
             {
                 for (int z = 0; z < depth; z++)
                 {
-                    GridCell cell = new GridCell(new Vector3Int(x, y, z), 0f, Contents.Full);
+                    GridCell cell = new GridCell(new Vector3Int(x, y, z), 0f, Contents.Unknown);
                     gridArray[x, y, z] = cell;
                     if (inflowLocation[0] == x & inflowLocation[1] == y & inflowLocation[2] == z)
                     {
@@ -53,6 +53,7 @@ public class WaterGrid : MonoBehaviour
                 }
             }
         }
+        gridArray[inflowLocation[0], inflowLocation[1], inflowLocation[2]].SetContents(Contents.Surface);
     }
 
     private Dictionary<Vector3Int, float> InstVelocities(float[] vs)
@@ -269,6 +270,43 @@ public class WaterGrid : MonoBehaviour
     {
         Vector3 newPos = p.getPosition() + (v * dt);
         p.UpdatePosition(newPos);
+    }
+
+    public void CellContents()
+    {
+        GridCell cell = gridArray[0, height - 1, 0];
+
+        cell.SetContents(Contents.Empty);
+        ConfigureContents(cell);
+        // MAKE MORE EFFICIENT
+        for (int x = 0; x < width; x++)
+        {
+            for (int y = 0; y < height; y++)
+            {
+                for (int z = 0; z < depth; z++)
+                {
+                    if (gridArray[x, y, z].GetContents().Equals(Contents.Unknown)) {
+                        gridArray[x, y, z].SetContents(Contents.Full);
+                    }
+                }
+            }
+        }
+    }
+
+    public void ConfigureContents(GridCell c)
+    {
+        Dictionary<Vector3Int, GridCell> neighbours;
+        neighbours = GetNeighbours(cell);
+        if (cell.GetContents().Equals(Contents.Empty))
+        {
+            foreach(KeyValuePair<Vector3Int, GridCell> entry in neighbours)
+            {
+                if (entry.Value.GetContents.Equals(Contents.Unknown)) {
+                    entry.Value.SetContents(Contents.Empty);
+                    ConfigureContents(entry.Value);
+                }
+            }
+        }
     }
 
     public void FixedUpdate()

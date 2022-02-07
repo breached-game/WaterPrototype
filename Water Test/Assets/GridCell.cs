@@ -6,7 +6,8 @@ public enum Contents
 {
     Full,
     Surface,
-    Empty
+    Empty,
+    Unknown
 }
 
 public class GridCell : MonoBehaviour
