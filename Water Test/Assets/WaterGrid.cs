@@ -23,7 +23,7 @@ public class WaterGrid : MonoBehaviour
     private float beta;
     private float b_0 = 1.7f;
     private float eps = 0.0001f;
-    public Vector3 inflowLocation;
+    public Vector3Int inflowLocation;
     public float inflowVelocity;
     public Vector3Int inflowDirection;
     [SerializeField] private GameObject WaterParticle;
@@ -375,12 +375,12 @@ public class WaterGrid : MonoBehaviour
     public void ConfigureContents(GridCell c)
     {
         Dictionary<Vector3Int, GridCell> neighbours;
-        neighbours = GetNeighbours(cell);
-        if (cell.GetContents().Equals(Contents.Empty))
+        neighbours = GetNeighbours(c);
+        if (c.GetContents().Equals(Contents.Empty))
         {
             foreach(KeyValuePair<Vector3Int, GridCell> entry in neighbours)
             {
-                if (entry.Value.GetContents.Equals(Contents.Unknown)) {
+                if (entry.Value.GetContents().Equals(Contents.Unknown)) {
                     entry.Value.SetContents(Contents.Empty);
                     ConfigureContents(entry.Value);
                 }
