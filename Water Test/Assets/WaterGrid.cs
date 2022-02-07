@@ -265,6 +265,12 @@ public class WaterGrid : MonoBehaviour
 
     }
 
+    private void ParticleLocationUpdate(Particle p, Vector3 v)
+    {
+        Vector3 newPos = p.getPosition() + (v * dt);
+        p.UpdatePosition(newPos);
+    }
+
     public void FixedUpdate()
     {
         PressureIterations();

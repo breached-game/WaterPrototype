@@ -15,7 +15,7 @@ public class Particle : MonoBehaviour
     }
 
     // Update is called once per frame
-    void UpdatePosition(Vector3 newPos)
+    public void UpdatePosition(Vector3 newPos)
     {
         position = newPos;
         WaterParticle.transform.position = position;
