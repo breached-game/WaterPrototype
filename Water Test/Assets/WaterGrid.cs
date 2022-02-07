@@ -1,15 +1,23 @@
 using System.Collections;
 using System.Collections.Generic;
 using System;
+using System.Linq;
 using UnityEngine;
 
 public class WaterGrid : MonoBehaviour
 {
 
+    struct VelocityDistance
+    {
+        public float[] distance;
+        public float[] velocity;
+    }
+
     private Grid water_grid;
     private GridCell[,,] gridArray;
     private int width, height, depth = 10;
     private float dx, dy, dz = 0.2f;
+    private float cellSize = 0.2f;
     private float dt = 1f;
     private float vis = 1.3f;
     private float beta;
@@ -257,18 +265,89 @@ public class WaterGrid : MonoBehaviour
         }
     }
 
-    private void ParticleVelocityUpdate(Particle p)
+    private VelocityDistance GetParticleVelocityComponents(Vector3 particlePosition, GridCell cell, Vector3 localCellPosition, Vector3 v1,Vector3Int v2,Vector3 v3,Vector3Int v4,Vector3 v5,Vector3Int v6)
     {
+        Vector3[] velocityPositions = new Vector3[4];
+        VelocityDistance componentVelocities = new VelocityDistance();
+        componentVelocities.distance = new float[4];
+        componentVelocities.velocity = new float[4];
+        velocityPositions[0] = localCellPosition + (v1 * cellSize / 2);
+        componentVelocities.velocity[0] = cell.GetVelocities()[v2];
+        velocityPositions[1] = localCellPosition + (v3 * cellSize / 2);
+        componentVelocities.velocity[1] = cell.GetVelocities()[v4];
+        velocityPositions[2] = localCellPosition + (v5 * cellSize) + (v1 * cellSize / 2);
+        componentVelocities.velocity[2] = GetNeighbour(cell, GetNeighbours(cell), v6).GetVelocities()[v2];
+        velocityPositions[3] = localCellPosition + (v5 * cellSize) + (v3 * cellSize / 2);
+        componentVelocities.velocity[2] = GetNeighbour(cell, GetNeighbours(cell), v6).GetVelocities()[v4];
+        for (int i = 0; i < 4; i++)
+        {
+            componentVelocities.distance[i] = Vector3.Magnitude(particlePosition - velocityPositions[i]);
+        }
+        return componentVelocities;
+    } 
+
+    private Vector3 ParticleVelocityUpdate(Particle p)
+    {
+        // Calculated in 2D so x + y, y + x, z + y
         Vector3 position = p.getPosition();
+        float[] newVelocities = new float[3];
+        int index;
+        VelocityDistance[] componentsVelocities = new VelocityDistance[3];
+        float distance;
         Vector3Int cellPosition = water_grid.LocalToCell(position);
         GridCell cell = gridArray[cellPosition[0], cellPosition[1], cellPosition[2]];
+        Vector3 localCellPosition = water_grid.CellToLocal(cellPosition) + Vector3.one * dx/2;
+        //x component
+        index = 1;
+        distance = (position - localCellPosition)[index];
+        if (distance < cellSize / 2)
+        {
+            componentsVelocities[0] = GetParticleVelocityComponents(position, cell, localCellPosition, Vector3.left, Vector3Int.left, Vector3.right, Vector3Int.right, Vector3.down, Vector3Int.down);        
+        }
+        else
+        {
+            componentsVelocities[0] = GetParticleVelocityComponents(position, cell, localCellPosition, Vector3.left, Vector3Int.left, Vector3.right, Vector3Int.right, Vector3.up, Vector3Int.up);
+        }
+        //y component
+        index = 0;
+        distance = (position - localCellPosition)[index];
+        if (distance < cellSize / 2)
+        {
+            componentsVelocities[1] = GetParticleVelocityComponents(position, cell, localCellPosition, Vector3.up, Vector3Int.up, Vector3.down, Vector3Int.down, Vector3.left, Vector3Int.left);
+        }
+        else
+        {
+            componentsVelocities[1] = GetParticleVelocityComponents(position, cell, localCellPosition, Vector3.up, Vector3Int.up, Vector3.down, Vector3Int.down, Vector3.right, Vector3Int.right);
 
-
+        }
+        //z component
+        index = 0;
+        distance = (position - localCellPosition)[index];
+        if (distance < cellSize / 2)
+        {
+            componentsVelocities[2] = GetParticleVelocityComponents(position, cell, localCellPosition, Vector3.back, Vector3Int.back, Vector3.forward, Vector3Int.forward, Vector3.left, Vector3Int.left);
+        }
+        else
+        {
+            componentsVelocities[2] = GetParticleVelocityComponents(position, cell, localCellPosition, Vector3.back, Vector3Int.back, Vector3.forward, Vector3Int.forward, Vector3.right, Vector3Int.right);
+        }
+        for (int j = 0; j < 3; j++)
+        {
+            for (int i = 0; i < 4; i++)
+            {
+                newVelocities[j] += componentsVelocities[j].velocity[i] * componentsVelocities[j].distance[i];
+            }
+            newVelocities[j] = newVelocities[0] / (componentsVelocities[j].distance.Sum());
+        }
+        return new Vector3(newVelocities[0], newVelocities[1], newVelocities[2]);
     }
 
-    private void ParticleLocationUpdate(Particle p, Vector3 v)
+    private void ParticleLocationUpdate(Particle p)
     {
-        Vector3 newPos = p.getPosition() + (v * dt);
+        Vector3 v;
+        Vector3 newPos;
+        v = ParticleVelocityUpdate(p);
+        newPos = p.getPosition() + (v * dt);
         p.UpdatePosition(newPos);
     }
 
