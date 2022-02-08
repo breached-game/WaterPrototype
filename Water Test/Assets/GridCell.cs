@@ -7,7 +7,8 @@ public enum Contents
     Full,
     Surface,
     Empty,
-    Unknown
+    Unknown,
+    Solid
 }
 
 public class GridCell : MonoBehaviour
@@ -24,7 +25,6 @@ public class GridCell : MonoBehaviour
         position = arg_position;
         velocities = new Dictionary<Vector3Int, float>();
         pressure = arg_pressure;
-        Debug.Log("Cell at " + arg_position + " created");
         divergence = 0f;
         cellContents = c;
     }

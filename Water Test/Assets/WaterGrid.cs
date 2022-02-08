@@ -15,10 +15,14 @@ public class WaterGrid : MonoBehaviour
 
     private Grid water_grid;
     private GridCell[,,] gridArray;
-    private int width, height, depth = 10;
-    private float dx, dy, dz = 0.2f;
+    private int width = 10;
+    private int height = 10;
+    private int depth = 10;
+    private float dz = 0.2f;
+    private float dx = 0.2f;
+    private float dy = 0.2f;
     private float cellSize = 0.2f;
-    private float dt = 1f;
+    private float dt = 10f;
     private float vis = 1.3f;
     private float beta;
     private float b_0 = 1.7f;
@@ -32,19 +36,25 @@ public class WaterGrid : MonoBehaviour
     private Vector3Int[] basisVectors = new Vector3Int[6] { new Vector3Int(1,0,0), new Vector3Int(-1,0,0), 
         new Vector3Int(0,1,0), new Vector3Int(0,-1,0), new Vector3Int(0,0,1), new Vector3Int(0,0,-1)};
 
-    void Start()
+    void Awake()
     {
         Time.fixedDeltaTime = dt;
         water_grid = gameObject.GetComponent<Grid>();
         gridArray = new GridCell[width, height, depth];
         Setup();
         beta = (b_0 / (2 * dt)) * (1 / Mathf.Pow(dx, 2)) * (1 / Mathf.Pow(dy, 2)) * (1 / Mathf.Pow(dz, 2));
+        Debug.Log("Awake");
+    }
+
+    void Start()
+    {
+        Debug.Log("Started");
     }
 
     private void Setup()
     {
         float[] velocities = new float[6] {0f,0f,0f,0f,0f,0f};
-        particle = new Particle(inflowLocation, WaterParticle);
+        //particle = new Particle(inflowLocation, WaterParticle);
         for (int x = 0; x < width; x++)
         {
             for (int y = 0; y < height; y++)
@@ -58,10 +68,14 @@ public class WaterGrid : MonoBehaviour
                         velocities[Array.IndexOf(basisVectors, inflowDirection)] = inflowVelocity;
                     }
                     gridArray[x, y, z].SetVelocities(InstVelocities(velocities));
+                    if (x == 0 || y == 0 || z == 0 || x == width -1 || y == height-1 || z == depth -1)
+                    {
+                        gridArray[x, y, z].SetContents(Contents.Solid);
+                    }
                 }
             }
         }
-        gridArray[inflowLocation[0], inflowLocation[1], inflowLocation[2]].SetContents(Contents.Surface);
+        gridArray[inflowLocation[0], inflowLocation[1], inflowLocation[2]].SetContents(Contents.Full);
     }
 
     private Dictionary<Vector3Int, float> InstVelocities(float[] vs)
@@ -125,15 +139,22 @@ public class WaterGrid : MonoBehaviour
         float c4;
         float c5;
         float c6;
+        int sign = 1;
+
+        Debug.Log("Velocity tilde called");
 
         velocities = c.GetVelocities();
         neighbourVelocity = GetNeighbour(c, ns, d).GetVelocities()[d];// u_i+1.5,j,k
         neighbourAverage = 0.5f * (neighbourVelocity + velocities[d]);// u_i+1,j,k
         cellAverage = 0.5f * (velocities[d] + velocities[-1 * d]);
-        c1 = velocities[d] + dt * ((1 / dx) * (Mathf.Pow(cellAverage, 2) - Mathf.Pow(neighbourAverage, 2)));
-        cx = (1 / dx) * ((velocities[d] * velocities[new Vector3Int(0, d[0] * -1, 0)]) - (velocities[d] * velocities[new Vector3Int(0, d[0], 0)]));
-        cy = (1 / dy) * ((velocities[d] * velocities[new Vector3Int(d[0] * -1, 0, 0)]) - (velocities[d] * velocities[new Vector3Int(d[0], 0, 0)]));
-        cz = (1 / dz) * ((velocities[d] * velocities[new Vector3Int(0, 0, d[0] * -1)]) - (velocities[d] * velocities[new Vector3Int(0, 0, d[0])]));
+        c1 = velocities[d] + (dt * ((1 / dx) * (Mathf.Pow(cellAverage, 2) - Mathf.Pow(neighbourAverage, 2))));
+        if (d[0] + d[1] + d[2] < 0)
+        {
+            sign = -1;
+        }
+        cx = (1 / dx) * ((velocities[d] * velocities[new Vector3Int(0, sign * -1, 0)]) - (velocities[d] * velocities[new Vector3Int(0, sign, 0)]));
+        cy = (1 / dy) * ((velocities[d] * velocities[new Vector3Int(sign * -1, 0, 0)]) - (velocities[d] * velocities[new Vector3Int(sign, 0, 0)]));
+        cz = (1 / dz) * ((velocities[d] * velocities[new Vector3Int(0, 0, sign * -1)]) - (velocities[d] * velocities[new Vector3Int(0, 0, sign)]));
         c2 = 0f;
         c3 = 0f;
         if (d.Equals(basisVectors[0])) {
@@ -165,6 +186,7 @@ public class WaterGrid : MonoBehaviour
         c4 = (vis / Mathf.Pow(dx, 2)) * (GetNeighbour(c, ns, basisVectors[0]).GetVelocities()[d] - 2 * v + GetNeighbour(c, ns, new Vector3Int(-1,0,0)).GetVelocities()[d]);
         c5 = (vis / Mathf.Pow(dy, 2)) * (GetNeighbour(c, ns, basisVectors[2]).GetVelocities()[d] - 2 * v + GetNeighbour(c, ns, basisVectors[3]).GetVelocities()[d]);
         c6 = (vis / Mathf.Pow(dz, 2)) * (GetNeighbour(c, ns, basisVectors[4]).GetVelocities()[d] - 2 * v + GetNeighbour(c, ns, basisVectors[5]).GetVelocities()[d]);
+        Debug.Log(c1 + c2 + c3 + g + c4 + c5 + c6);
         return c1 + c2 + c3 + g + c4 + c5 + c6;
     }
 
@@ -208,6 +230,63 @@ public class WaterGrid : MonoBehaviour
         c.SetNewPressure(c.GetPressure() + dp);
     }
 
+    private void SurfaceVelocityUpdate(GridCell c)
+    {
+        float dp = 0f;
+        Dictionary<Vector3Int, float> velocities = new Dictionary<Vector3Int, float>();
+        Dictionary<Vector3Int, float> currentVelocities = c.GetNewVelocities();
+        Dictionary<Vector3Int,GridCell> neighbours = GetNeighbours(c);
+        GridCell neighbour;
+        GridCell oppositeNeighbour;
+        Contents contents;
+        for (int i = 0; i < 6; i++)
+        {
+            neighbour = neighbours[basisVectors[i]];
+            oppositeNeighbour = neighbours[basisVectors[i] * -1];
+            contents = neighbour.GetContents();
+            if ((contents.Equals(Contents.Full) || contents.Equals(Contents.Surface)) && !(oppositeNeighbour.GetContents().Equals(Contents.Full) || oppositeNeighbour.GetContents().Equals(Contents.Surface)))
+            {
+                velocities[basisVectors[i] * -1] = neighbour.GetVelocities()[basisVectors[i] * -1];
+            }
+            else
+            {
+                velocities[basisVectors[i]] = currentVelocities[basisVectors[i]];
+            }
+        }
+        c.SetNewVelocities(velocities);
+        c.SetNewPressure(c.GetPressure() + dp);
+    }
+
+    private void SolidVelocityUpdate(GridCell c)
+    {
+        float p = 0f;
+        Dictionary<Vector3Int, float> velocities = new Dictionary<Vector3Int, float>();
+        Dictionary<Vector3Int, float> currentVelocities = c.GetNewVelocities();
+        Dictionary<Vector3Int, GridCell> neighbours = GetNeighbours(c);
+        Dictionary<Vector3Int, float> neighbourVelocities;
+        for (int i = 0; i < 6; i++)
+        {
+            if (!neighbours[basisVectors[i]].GetContents().Equals(Contents.Solid))
+            {
+                p = neighbours[basisVectors[i]].GetPressure();
+                for (int j = 0; j < 6; j++)
+                {
+                    neighbourVelocities = neighbours[basisVectors[i]].GetVelocities();
+                    if (basisVectors[j] != (basisVectors[i] * -1))
+                    {
+                        velocities[basisVectors[j]] = neighbourVelocities[basisVectors[j]];
+                    }
+                    else
+                    {
+                        velocities[basisVectors[j]] = currentVelocities[basisVectors[j]];
+                    }
+                }
+            }
+        }
+        c.SetNewVelocities(velocities);
+        c.SetNewPressure(p);
+    }
+
     private void PressureIterations()
     {
         Dictionary<Vector3Int, float> velocities = new Dictionary<Vector3Int, float>();
@@ -215,6 +294,7 @@ public class WaterGrid : MonoBehaviour
         bool con = true;
         // Runs VelocityUpdate after previously calculating Velocity Tilde for each cell
         // Keeps running it until divergence is less than epsilon (pre-defined)
+        Debug.Log("Cycle Started");
         for (int x = 0; x < width; x++)
         {
             for (int y = 0; y < height; y++)
@@ -234,19 +314,23 @@ public class WaterGrid : MonoBehaviour
                 }
             }
         }
+        Debug.Log("Full cells set");
         while (con)
         {
-            con = false;
+            con = true;
             for (int x = 0; x < width; x++)
             {
                 for (int y = 0; y < height; y++)
                 {
                     for (int z = 0; z < depth; z++)
                     {
-                        VelocityUpdate(gridArray[x, y, z]);
-                        if (gridArray[x, y, z].GetDivergence() > eps)
+                        if (gridArray[x, y, z].GetContents() == Contents.Full)
                         {
-                            con = true;
+                            VelocityUpdate(gridArray[x, y, z]);
+                            if (gridArray[x, y, z].GetDivergence() > eps)
+                            {
+                                con = false;
+                            }
                         }
                     }
                 }
@@ -259,6 +343,14 @@ public class WaterGrid : MonoBehaviour
             {
                 for (int z = 0; z < depth; z++)
                 {
+                    if (gridArray[x, y, z].GetContents() == Contents.Surface)
+                    {
+                        SurfaceVelocityUpdate(gridArray[x, y, z]);
+                    }
+                    else if (gridArray[x, y, z].GetContents() == Contents.Solid)
+                    {
+                        SolidVelocityUpdate(gridArray[x, y, z]);
+                    }
                     gridArray[x, y, z].UpdateValues();
                 }
             }
@@ -390,6 +482,8 @@ public class WaterGrid : MonoBehaviour
 
     public void FixedUpdate()
     {
+        Debug.Log("Update");
         PressureIterations();
+        //ParticleLocationUpdate(particle);
     }
 }
