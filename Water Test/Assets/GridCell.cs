@@ -11,7 +11,7 @@ public enum Contents
     Solid
 }
 
-public class GridCell : MonoBehaviour
+public class GridCell : ScriptableObject
 {
     private Vector3Int position;
     private Dictionary<Vector3Int,float> velocities;
@@ -20,7 +20,7 @@ public class GridCell : MonoBehaviour
     private float newPressure;
     private float divergence;
     private Contents cellContents;
-    public GridCell(Vector3Int arg_position, float arg_pressure, Contents c)
+    public void Setup(Vector3Int arg_position, float arg_pressure, Contents c)
     {
         position = arg_position;
         velocities = new Dictionary<Vector3Int, float>();
