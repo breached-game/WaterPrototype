@@ -32,6 +32,7 @@ public class WaterGrid : MonoBehaviour
     public Vector3Int inflowDirection;
     [SerializeField] private GameObject WaterParticle;
     private Particle particle;
+    private List<Particle> particleList = new List<Particle>();
 
     private Vector3Int[] basisVectors = new Vector3Int[6] { new Vector3Int(1,0,0), new Vector3Int(-1,0,0), 
         new Vector3Int(0,1,0), new Vector3Int(0,-1,0), new Vector3Int(0,0,1), new Vector3Int(0,0,-1)};
@@ -101,6 +102,14 @@ public class WaterGrid : MonoBehaviour
             velocities.Add(basisVectors[i], vs[i]);
         }
         return velocities;
+    }
+
+    private void CreateParticle(Vector3Int position)
+    {
+        Particle p;
+        p = ScriptableObject.CreateInstance<Particle>();
+        p.Setup(water_grid.CellToLocal(position), WaterParticle);
+        particleList.Add(particle);
     }
     
     private Dictionary<Vector3Int,GridCell> GetNeighbours(GridCell c)
@@ -565,6 +574,10 @@ public class WaterGrid : MonoBehaviour
         CellContents();
         Debug.Log("Update");
         PressureIterations();
+        foreach (Particle p in particleList)
+        {
+            ParticleLocationUpdate(p);
+        }
         ParticleLocationUpdate(particle);
     }
 }
