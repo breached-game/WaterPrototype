@@ -2,12 +2,12 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Particle : MonoBehaviour
+public class Particle : ScriptableObject
 {
     private Vector3 position;
     private GameObject WaterParticle;
     // Start is called before the first frame update
-    public Particle(Vector3 initialPosition, GameObject p)
+    public void Setup(Vector3 initialPosition, GameObject p)
     {
         position = initialPosition;
         WaterParticle = p;

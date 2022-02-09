@@ -20,6 +20,7 @@ public class GridCell : ScriptableObject
     private float newPressure;
     private float divergence;
     private Contents cellContents;
+    private List<Particle> particles;
     public void Setup(Vector3Int arg_position, float arg_pressure, Contents c)
     {
         position = arg_position;
@@ -27,6 +28,22 @@ public class GridCell : ScriptableObject
         pressure = arg_pressure;
         divergence = 0f;
         cellContents = c;
+        particles = new List<Particle>();
+    }
+
+    public void AddParticle(Particle particle)
+    {
+        particles.Add(particle);
+    }
+
+    public void RemoveParticle(Particle particle)
+    {
+        particles.Remove(particle);
+    }
+
+    public List<Particle> GetParticles()
+    {
+        return particles;
     }
 
     public void SetVelocities(Dictionary<Vector3Int, float> arg_velocities)
