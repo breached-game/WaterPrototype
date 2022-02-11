@@ -13,6 +13,17 @@ public class WaterGrid : MonoBehaviour
         public float[] velocity;
     }
 
+    private float[,,] cellsVelocites_X;
+    private float[,,] cellsVelocites_Y;
+    private float[,,] cellsVelocites_Z;
+    private float[,,] cellPressures;
+
+    private float[,,] newCellsVelocites_X;
+    private float[,,] newCellsVelocites_Y;
+    private float[,,] newCellsVelocites_Z;
+    private float[,,] newCellPressures;
+
+
     private Grid water_grid;
     private GridCell[,,] gridArray;
     private int width = 10;
@@ -41,43 +52,209 @@ public class WaterGrid : MonoBehaviour
     {
         Time.fixedDeltaTime = dt;
         water_grid = gameObject.GetComponent<Grid>();
-        gridArray = new GridCell[width, height, depth];
+        //gridArray = new GridCell[width, height, depth];
+
+        cellsVelocites_X = new float[width + 1, height    , depth    ];
+        cellsVelocites_Y = new float[width    , height + 1, depth    ];
+        cellsVelocites_Z = new float[width    , height    , depth + 1];
+        cellPressures    = new float[width    , height    , depth    ];
+
         Setup();
         beta = (b_0 / (2 * dt)) * (1 / Mathf.Pow(dx, 2)) * (1 / Mathf.Pow(dy, 2)) * (1 / Mathf.Pow(dz, 2));
     }
 
+    /*  private void Setup()
+      {
+          float[] velocities = new float[6] {0f,0f,0f,0f,0f,0f};
+          for (int x = 0; x < width; x++)
+          {
+              for (int y = 0; y < height; y++)
+              {
+                  for (int z = 0; z < depth; z++)
+                  {
+                      GridCell cell = ScriptableObject.CreateInstance<GridCell>();
+                      cell.Setup(new Vector3Int(x, y, z), 0f, Contents.Empty);
+                      gridArray[x, y, z] = cell;
+                      if (inflowLocation[0] == x & inflowLocation[1] == y & inflowLocation[2] == z)
+                      {
+                          for (int i = 0; i < 3; i++)
+                          {
+                              velocities[Array.IndexOf(basisVectors, inflowDirection[i] * basisVectors[2*i])] = inflowVelocity * inflowDirection[i];
+                          }
+                      }
+                      if (x == 0 || y == 0 || z == 0 || x == width - 1 || y == height - 1 || z == depth - 1)
+                      {
+                          gridArray[x, y, z].SetContents(Contents.Solid);
+                      }
+                      else
+                      {
+                          velocities[3] = -9.81f * dt;
+                      }
+                      gridArray[x, y, z].SetVelocities(InstVelocities(velocities));
+                  }
+              }
+          }
+          gridArray[inflowLocation[0], inflowLocation[1], inflowLocation[2]].SetContents(Contents.Surface);
+      }
+  */
+
     private void Setup()
     {
-        float[] velocities = new float[6] {0f,0f,0f,0f,0f,0f};
+        float gravityVelocity = (float)(9.81 * dt);
+
         for (int x = 0; x < width; x++)
         {
             for (int y = 0; y < height; y++)
             {
                 for (int z = 0; z < depth; z++)
                 {
-                    GridCell cell = ScriptableObject.CreateInstance<GridCell>();
-                    cell.Setup(new Vector3Int(x, y, z), 0f, Contents.Empty);
+                    GridCell cell = ScriptableObject.CreateInstance<GridCell>(); //
+                    cell.Setup(new Vector3Int(x, y, z), 0f, Contents.Empty);    //
                     gridArray[x, y, z] = cell;
-                    if (inflowLocation[0] == x & inflowLocation[1] == y & inflowLocation[2] == z)
-                    {
-                        for (int i = 0; i < 3; i++)
-                        {
-                            velocities[Array.IndexOf(basisVectors, inflowDirection[i] * basisVectors[2*i])] = inflowVelocity * inflowDirection[i];
-                        }
-                    }
+
                     if (x == 0 || y == 0 || z == 0 || x == width - 1 || y == height - 1 || z == depth - 1)
                     {
                         gridArray[x, y, z].SetContents(Contents.Solid);
                     }
-                    else
-                    {
-                        velocities[3] = -9.81f * dt;
-                    }
-                    gridArray[x, y, z].SetVelocities(InstVelocities(velocities));
                 }
             }
         }
-        gridArray[inflowLocation[0], inflowLocation[1], inflowLocation[2]].SetContents(Contents.Surface);
+
+        //Fill in cellVelocities, might be better method but they are each different sizes :(
+        
+        // X velocties
+        for (int x = 0; x < width+1; x++)
+        {
+            for (int y = 0; y < height; y++)
+            {
+                for (int z = 0; z < depth; z++)
+                {
+                    cellsVelocites_X[x, y, z] = 0;
+                }
+            }
+        }
+
+        // Y velocities
+        for (int x = 0; x < width; x++)
+        {
+            for (int y = 0; y < height+1; y++)
+            {
+                for (int z = 0; z < depth; z++)
+                {
+
+                    //add gravity, this for all cells as [x,y,z] will be -1/2 for all cells 
+                    cellsVelocites_Y[x, y, z] = gravityVelocity;
+ 
+                }
+            }
+        }
+
+        // Z velocities
+        for (int x = 0; x < width; x++)
+        {
+            for (int y = 0; y < height; y++)
+            {
+                for (int z = 0; z < depth+1; z++)
+                {
+                    cellsVelocites_Z[x, y, z] = 0;
+                }
+            }
+        }
+
+        int xInflow = inflowLocation[0];
+        int yInflow = inflowLocation[1];
+        int zInflow = inflowLocation[2];
+
+        cellsVelocites_X[xInflow  , yInflow  , zInflow]   = inflowVelocity; // x-1/2
+        cellsVelocites_X[xInflow+1, yInflow  , zInflow]   = inflowVelocity; // x+1/2
+        cellsVelocites_Y[xInflow  , yInflow  , zInflow]   = inflowVelocity; // y-1/2
+        cellsVelocites_Y[xInflow  , yInflow+1, zInflow]   = inflowVelocity; // y+1/2
+        cellsVelocites_Z[xInflow  , yInflow  , zInflow]   = inflowVelocity; // z-1/2
+        cellsVelocites_Z[xInflow  , yInflow  , zInflow+1] = inflowVelocity; // z+1/2
+
+
+    }
+
+
+
+  
+    private Dictionary<Vector3Int, float> getCellAllVelocities(Vector3Int pos)
+    {
+        //Currently returning dictionaries to suit current code, can be changed to just return values
+        //SHOULD ONLY BE CALLED IF THE GRID POSITION EXISTS !!!!!
+
+        Dictionary<Vector3Int, float> AllVelocities = new Dictionary<Vector3Int, float>();
+        AllVelocities.Add(Vector3Int.left   , cellsVelocites_X[pos.x, pos.y, pos.z]);
+        AllVelocities.Add(Vector3Int.right  , cellsVelocites_X[pos.x + 1, pos.y, pos.z]);
+
+        AllVelocities.Add(Vector3Int.down   , cellsVelocites_Y[pos.x, pos.y, pos.z]);
+        AllVelocities.Add(Vector3Int.up     , cellsVelocites_Y[pos.x, pos.y + 1, pos.z]);
+
+        AllVelocities.Add(Vector3Int.back   , cellsVelocites_Z[pos.x, pos.y, pos.z]);
+        AllVelocities.Add(Vector3Int.forward, cellsVelocites_Z[pos.x, pos.y, pos.z + 1]);
+
+        return AllVelocities;
+    }
+
+
+    private Dictionary<Vector3Int, float> getCellAllNewVelocities(Vector3Int pos)
+    {
+        Dictionary<Vector3Int, float> AllVelocities = new Dictionary<Vector3Int, float>();
+        AllVelocities.Add(Vector3Int.left,  newCellsVelocites_X[pos.x, pos.y, pos.z]);
+        AllVelocities.Add(Vector3Int.right, newCellsVelocites_X[pos.x + 1, pos.y, pos.z]);
+
+        AllVelocities.Add(Vector3Int.down, newCellsVelocites_Y[pos.x, pos.y, pos.z]);
+        AllVelocities.Add(Vector3Int.up, newCellsVelocites_Y[pos.x, pos.y + 1, pos.z]);
+
+        AllVelocities.Add(Vector3Int.back, newCellsVelocites_Z[pos.x, pos.y, pos.z]);
+        AllVelocities.Add(Vector3Int.forward, newCellsVelocites_Z[pos.x, pos.y, pos.z + 1]);
+
+        return AllVelocities;
+    }
+
+
+
+    private void setCellVelocities(Dictionary<Vector3Int, float> velocities, Vector3Int pos)
+    {
+
+        cellsVelocites_X[pos.x, pos.y, pos.z]     = velocities[Vector3Int.left];
+        cellsVelocites_X[pos.x + 1, pos.y, pos.z] = velocities[Vector3Int.right];
+
+        cellsVelocites_Y[pos.x, pos.y, pos.z]     = velocities[Vector3Int.down];
+        cellsVelocites_Y[pos.x, pos.y + 1, pos.z] = velocities[Vector3Int.up];
+
+        cellsVelocites_Z[pos.x, pos.y, pos.z]     = velocities[Vector3Int.back];
+        cellsVelocites_Z[pos.x, pos.y, pos.z + 1] = velocities[Vector3Int.forward];
+
+    }
+
+
+    private void setCellNewVelocities(Dictionary<Vector3Int, float> velocities, Vector3Int pos)
+    {
+
+        newCellsVelocites_X[pos.x, pos.y, pos.z]     = velocities[Vector3Int.left];
+        newCellsVelocites_X[pos.x + 1, pos.y, pos.z] = velocities[Vector3Int.right];
+
+        newCellsVelocites_Y[pos.x, pos.y, pos.z]     = velocities[Vector3Int.down];
+        newCellsVelocites_Y[pos.x, pos.y + 1, pos.z] = velocities[Vector3Int.up];
+
+        newCellsVelocites_Z[pos.x, pos.y, pos.z]     = velocities[Vector3Int.back];
+        newCellsVelocites_Z[pos.x, pos.y, pos.z + 1] = velocities[Vector3Int.forward];
+
+    }
+
+    private Contents getCellContents(Vector3Int pos)
+    {
+        return gridArray[pos.x, pos.y, pos.z].GetContents();
+    }
+
+
+
+
+
+    private float getCellPressure(Vector3Int pos)
+    {
+        return cellPressures[pos.x, pos.y, pos.z];
     }
 
     private Dictionary<Vector3Int, float> InstVelocities(float[] vs)
@@ -101,7 +278,7 @@ public class WaterGrid : MonoBehaviour
         particleList.Add(p);
     }
     
-    private Dictionary<Vector3Int,GridCell> GetNeighbours(GridCell c)
+/*    private Dictionary<Vector3Int,GridCell> GetNeighbours(GridCell c)
     {
         Vector3Int neighbour;
         Dictionary<Vector3Int, GridCell> neighbours = new Dictionary<Vector3Int, GridCell>();
@@ -122,32 +299,167 @@ public class WaterGrid : MonoBehaviour
         }
         return neighbours;
     }
-
-    private GridCell GetNeighbour(GridCell c, Dictionary<Vector3Int, GridCell> ns, Vector3Int d)
+*/
+    private Dictionary<Vector3Int, Vector3Int> GetNeighbours(Vector3Int pos)
     {
-        GridCell neighbour;
-        if (ns.TryGetValue(d,out neighbour)) {
+        // Passes in cell coordinates (could be changed to Vector3Int of position), returns dict of form -> direction from cell : position of neighbour
+
+        Vector3Int neighbour;
+        Vector3Int b; // Basis vector
+
+        Dictionary<Vector3Int, Vector3Int> neighbours = new Dictionary<Vector3Int, Vector3Int>();
+
+ 
+        for (int i = 0; i < 6; i++)
+        {
+            b = basisVectors[i];
+            neighbour = new Vector3Int(pos.x + b.x, pos.y + b.y, pos.z + b.z);
+
+            if (!(neighbour.x > width | neighbour.x < 0))
+            {
+                if (!(neighbour.y > height | neighbour.y < 0))
+                {
+                    if (!(neighbour.z > depth | neighbour.z < 0))
+                    {
+                        neighbours.Add(b, neighbour);
+                    }
+                }
+            }
+        }
+        return neighbours;
+    }
+
+ /* private GridCell GetNeighbour(GridCell c, Dictionary<Vector3Int, GridCell> ns, Vector3Int d)
+     {
+         GridCell neighbour;
+         if (ns.TryGetValue(d,out neighbour)) {
+         }
+         else
+         {
+             neighbour = ScriptableObject.CreateInstance<GridCell>();
+             neighbour.Setup(new Vector3Int(-1, -1, -1), 0, Contents.Empty);
+             neighbour.SetVelocities(InstVelocities(new float[] { 0f, 0f, 0f, 0f, 0f, 0f }));
+         }
+         return neighbour;
+     }*/
+
+    private Vector3Int GetNeighbour(Dictionary<Vector3Int, Vector3Int> neighbours, Vector3Int d)
+    {
+        Vector3Int neighbour;
+        if (neighbours.TryGetValue(d, out neighbour))
+        {
         }
         else
         {
-            neighbour = ScriptableObject.CreateInstance<GridCell>();
-            neighbour.Setup(new Vector3Int(-1, -1, -1), 0, Contents.Empty);
-            neighbour.SetVelocities(InstVelocities(new float[] { 0f, 0f, 0f, 0f, 0f, 0f }));
+            neighbour = new Vector3Int(-1,-1,-1);
         }
         return neighbour;
     }
 
-    private float VelocityTilde(GridCell c, float v, Vector3Int d, Dictionary<Vector3Int, GridCell> ns)
+
+    private float GetNeighbourVelocity(Dictionary<Vector3Int, Vector3Int> neighbours, Vector3Int d)
     {
-        Dictionary<Vector3Int, float> velocities;
+        //Note, will get the neighbour in direction d, and returns the neighbours velocity IN THE DIRECTION OF d !
+        //Haven't developed a way of getting neighbour in direction d, and then selecting a velocity of that neighbour not in direction d.
+
+        Vector3Int neighbour;
+        neighbour = GetNeighbour(neighbours, d);
+        if (neighbour == new Vector3Int(-1, -1, -1))
+        {
+            return 0f;
+        }
+        else
+        {
+            return getCellAllVelocities(neighbour)[d]; //Could be done more efficiently,  would need a quick method for selecting which velocity array (either x, y, z) to choose from using just d
+        }
+
+    }
+
+
+    /*  private float VelocityTilde(GridCell c, float v, Vector3Int d, Dictionary<Vector3Int, GridCell> ns)
+      {
+          Dictionary<Vector3Int, float> velocities;
+          float neighbourVelocity;
+          float neighbourAverage;
+          float cellAverage;
+          float g = 0f;
+          float cx;
+          float cy;
+          float cz;
+          float c1;
+          float c2;
+          float c3;
+          float c4;
+          float c5;
+          float c6;
+          int sign = 1;
+
+          Debug.Log("Velocity tilde called");
+
+
+
+          velocities = c.GetVelocities();
+          neighbourVelocity = GetNeighbour(c, ns, d).GetVelocities()[d];// u_i+1.5,j,k
+          neighbourAverage = 0.5f * (neighbourVelocity + velocities[d]);// u_i+1,j,k
+          cellAverage = 0.5f * (velocities[d] + velocities[-1 * d]);
+          c1 = velocities[d] + (dt * ((1 / dx) * (Mathf.Pow(cellAverage, 2) - Mathf.Pow(neighbourAverage, 2))));
+          if (d[0] + d[1] + d[2] < 0)
+          {
+              sign = -1;
+          }
+          cx = (1 / dx) * ((velocities[d] * velocities[new Vector3Int(0, sign * -1, 0)]) - (velocities[d] * velocities[new Vector3Int(0, sign, 0)]));
+          cy = (1 / dy) * ((velocities[d] * velocities[new Vector3Int(sign * -1, 0, 0)]) - (velocities[d] * velocities[new Vector3Int(sign, 0, 0)]));
+          cz = (1 / dz) * ((velocities[d] * velocities[new Vector3Int(0, 0, sign * -1)]) - (velocities[d] * velocities[new Vector3Int(0, 0, sign)]));
+          c2 = 0f;
+          c3 = 0f;
+          if (d.Equals(basisVectors[0])) {
+              c2 = cy + cz;
+              c3 = (1 / dx) * (c.GetPressure() - ns[d].GetPressure());
+          }
+          else if (d.Equals(basisVectors[1])) {
+              c2 = cy + cz;
+              c3 = (1 / dx) * (c.GetPressure() - ns[d].GetPressure());
+          }
+          else if (d.Equals(basisVectors[2])) {
+              c2 = cx + cz;
+              g = -9.81f;
+              c3 = (1 / dy) * (c.GetPressure() - ns[d].GetPressure());
+          }
+          else if (d.Equals(basisVectors[3])) {
+              c2 = cx + cz;
+              g = -9.81f;
+              c3 = (1 / dy) * (c.GetPressure() - ns[d].GetPressure());
+          }
+          else if (d.Equals(basisVectors[4])) {
+              c2 = cy + cx;
+              c3 = (1 / dz) * (c.GetPressure() - ns[d].GetPressure());
+          }
+          else if (d.Equals(basisVectors[5])) {
+              c2 = cy + cx;
+              c3 = (1 / dz) * (c.GetPressure() - ns[d].GetPressure());
+          }
+          c4 = (vis / Mathf.Pow(dx, 2)) * (GetNeighbour(c, ns, basisVectors[0]).GetVelocities()[d] - 2 * v + GetNeighbour(c, ns, new Vector3Int(-1,0,0)).GetVelocities()[d]);
+          c5 = (vis / Mathf.Pow(dy, 2)) * (GetNeighbour(c, ns, basisVectors[2]).GetVelocities()[d] - 2 * v + GetNeighbour(c, ns, basisVectors[3]).GetVelocities()[d]);
+          c6 = (vis / Mathf.Pow(dz, 2)) * (GetNeighbour(c, ns, basisVectors[4]).GetVelocities()[d] - 2 * v + GetNeighbour(c, ns, basisVectors[5]).GetVelocities()[d]);
+          return c1 + c2 + c3 + g + c4 + c5 + c6;
+      }*/
+    private float VelocityTilde(Vector3Int pos, float v, Vector3Int d, Dictionary<Vector3Int, Vector3Int> neighbours)
+    {
+
+        float selectedVelocity;
+        float pressure;
+        float neighbourPressure;
+
+        Dictionary<Vector3Int, float> allCellVelocities;
+        Vector3Int neighbour;
         float neighbourVelocity;
         float neighbourAverage;
         float cellAverage;
-        float c1;
-        float g = 0f;
+        float g = 9.81f;
         float cx;
         float cy;
         float cz;
+        float c1;
         float c2;
         float c3;
         float c4;
@@ -157,66 +469,96 @@ public class WaterGrid : MonoBehaviour
 
         Debug.Log("Velocity tilde called");
 
-        velocities = c.GetVelocities();
-        neighbourVelocity = GetNeighbour(c, ns, d).GetVelocities()[d];// u_i+1.5,j,k
-        neighbourAverage = 0.5f * (neighbourVelocity + velocities[d]);// u_i+1,j,k
-        cellAverage = 0.5f * (velocities[d] + velocities[-1 * d]);
-        c1 = velocities[d] + (dt * ((1 / dx) * (Mathf.Pow(cellAverage, 2) - Mathf.Pow(neighbourAverage, 2))));
+        //Current cell
+        allCellVelocities = getCellAllVelocities(pos);
+        selectedVelocity  = allCellVelocities[d];
+        pressure = getCellPressure(pos);
+        
+        //Neighbour cell
+        neighbour         = GetNeighbour(neighbours, d);
+        if (neighbour == new Vector3Int(-1, -1, -1))    //neighbour did not exist
+        {
+            neighbourVelocity = 0;
+            neighbourPressure = 0;
+
+        }
+        else
+        {
+            neighbourVelocity = getCellAllVelocities(neighbour)[d];
+            neighbourPressure = getCellPressure(neighbour);
+        }
+
+
+        neighbourAverage = 0.5f * (selectedVelocity + neighbourVelocity);
+        cellAverage      = 0.5f * (selectedVelocity + allCellVelocities[d * -1]);
+        c1 = selectedVelocity + (dt * ((1 / dx) * (Mathf.Pow(cellAverage, 2) - Mathf.Pow(neighbourAverage, 2))));
+        
         if (d[0] + d[1] + d[2] < 0)
         {
             sign = -1;
         }
-        cx = (1 / dx) * ((velocities[d] * velocities[new Vector3Int(0, sign * -1, 0)]) - (velocities[d] * velocities[new Vector3Int(0, sign, 0)]));
-        cy = (1 / dy) * ((velocities[d] * velocities[new Vector3Int(sign * -1, 0, 0)]) - (velocities[d] * velocities[new Vector3Int(sign, 0, 0)]));
-        cz = (1 / dz) * ((velocities[d] * velocities[new Vector3Int(0, 0, sign * -1)]) - (velocities[d] * velocities[new Vector3Int(0, 0, sign)]));
+        cx = (1 / dx) * ((selectedVelocity * allCellVelocities[new Vector3Int(0, sign * -1, 0)]) - (selectedVelocity * allCellVelocities[new Vector3Int(0, sign, 0)]));
+        cy = (1 / dy) * ((selectedVelocity * allCellVelocities[new Vector3Int(sign * -1, 0, 0)]) - (selectedVelocity * allCellVelocities[new Vector3Int(sign, 0, 0)]));
+        cz = (1 / dz) * ((selectedVelocity * allCellVelocities[new Vector3Int(0, 0, sign * -1)]) - (selectedVelocity * allCellVelocities[new Vector3Int(0, 0, sign)]));
         c2 = 0f;
         c3 = 0f;
-        if (d.Equals(basisVectors[0])) {
+        if (d.Equals(basisVectors[0]))
+        {
             c2 = cy + cz;
-            c3 = (1 / dx) * (c.GetPressure() - ns[d].GetPressure());
+            c3 = (1 / dx) * (pressure - neighbourPressure);
         }
-        else if (d.Equals(basisVectors[1])) {
+        else if (d.Equals(basisVectors[1]))
+        {
             c2 = cy + cz;
-            c3 = (1 / dx) * (c.GetPressure() - ns[d].GetPressure());
+            c3 = (1 / dx) * (pressure - neighbourPressure);
         }
-        else if (d.Equals(basisVectors[2])) {
+        else if (d.Equals(basisVectors[2]))
+        {
             c2 = cx + cz;
             g = -9.81f;
-            c3 = (1 / dy) * (c.GetPressure() - ns[d].GetPressure());
+            c3 = (1 / dy) * (pressure - neighbourPressure);
         }
-        else if (d.Equals(basisVectors[3])) {
+        else if (d.Equals(basisVectors[3]))
+        {
             c2 = cx + cz;
             g = -9.81f;
-            c3 = (1 / dy) * (c.GetPressure() - ns[d].GetPressure());
+            c3 = (1 / dy) * (pressure - neighbourPressure);
         }
-        else if (d.Equals(basisVectors[4])) {
+        else if (d.Equals(basisVectors[4]))
+        {
             c2 = cy + cx;
-            c3 = (1 / dz) * (c.GetPressure() - ns[d].GetPressure());
+            c3 = (1 / dz) * (pressure - neighbourPressure);
         }
-        else if (d.Equals(basisVectors[5])) {
+        else if (d.Equals(basisVectors[5]))
+        {
             c2 = cy + cx;
-            c3 = (1 / dz) * (c.GetPressure() - ns[d].GetPressure());
+            c3 = (1 / dz) * (pressure - neighbourPressure);
         }
-        c4 = (vis / Mathf.Pow(dx, 2)) * (GetNeighbour(c, ns, basisVectors[0]).GetVelocities()[d] - 2 * v + GetNeighbour(c, ns, new Vector3Int(-1,0,0)).GetVelocities()[d]);
-        c5 = (vis / Mathf.Pow(dy, 2)) * (GetNeighbour(c, ns, basisVectors[2]).GetVelocities()[d] - 2 * v + GetNeighbour(c, ns, basisVectors[3]).GetVelocities()[d]);
-        c6 = (vis / Mathf.Pow(dz, 2)) * (GetNeighbour(c, ns, basisVectors[4]).GetVelocities()[d] - 2 * v + GetNeighbour(c, ns, basisVectors[5]).GetVelocities()[d]);
+
+
+
+
+        c4 = (vis / Mathf.Pow(dx, 2)) * GetNeighbourVelocity(neighbours, basisVectors[0]) - 2 * v + GetNeighbourVelocity(neighbours, basisVectors[1]);
+        c5 = (vis / Mathf.Pow(dy, 2)) * GetNeighbourVelocity(neighbours, basisVectors[2]) - 2 * v + GetNeighbourVelocity(neighbours, basisVectors[3]);
+        c6 = (vis / Mathf.Pow(dz, 2)) * GetNeighbourVelocity(neighbours, basisVectors[4]) - 2 * v + GetNeighbourVelocity(neighbours, basisVectors[5]);
         return c1 + c2 + c3 + g + c4 + c5 + c6;
     }
 
-    private float Divergence(GridCell c)
+
+    private float Divergence(Vector3Int pos)
     {
         float cx;
         float cy;
         float cz;
         Dictionary<Vector3Int, float> velocities;
-        velocities = c.GetVelocities();
+        velocities = getCellAllVelocities(pos);
         cx = (1 / dx) * (velocities[basisVectors[0]] - velocities[basisVectors[1]]);
         cy = (1 / dy) * (velocities[basisVectors[2]] - velocities[basisVectors[3]]);
         cz = (1 / dz) * (velocities[basisVectors[4]] - velocities[basisVectors[5]]);
         return -(cx + cy + cz);
     }
 
-    private void VelocityUpdate(GridCell c)
+ /*   private void VelocityUpdate(GridCell c)
     {
         float dp;
         Vector3Int b;
@@ -241,15 +583,104 @@ public class WaterGrid : MonoBehaviour
         c.SetNewVelocities(velocities);
         c.SetNewPressure(c.GetPressure() + dp);
     }
+*/
+    private void VelocityUpdate(GridCell c)
+    {
 
-    private void SurfaceVelocityUpdate(GridCell c)
+        float dp;
+        Vector3Int b;
+        Vector3Int pos = c.GetPos();
+
+        Dictionary<Vector3Int, float> velocities = new Dictionary<Vector3Int, float>();
+        Dictionary<Vector3Int, float> currentVelocities = getCellAllNewVelocities(pos); //Why is this new velocities when surface and solid use the current?
+        float[] ds = new float[3] { dx, dy, dz };
+        float d = Divergence(pos);
+        dp = beta * d;
+        for (int i = 0; i < 6; i++)
+        {
+            b = basisVectors[i];
+            if (i % 2 == 0)
+            {
+                velocities[b] = currentVelocities[b] + ((dt / (ds[Decimal.ToInt64(Decimal.Truncate(i / 2))])) * dp);
+            }
+            else
+            {
+                velocities[b] = currentVelocities[b] - ((dt / (ds[Decimal.ToInt64(Decimal.Truncate(i / 2))])) * dp);
+            }
+        }
+        c.SetDivergence(d);
+        setCellNewVelocities(velocities, pos);
+        newCellPressures[pos.x, pos.y, pos.z] = getCellPressure(pos) + dp;
+    }
+
+
+
+
+
+// GOT THIS FAR BEFORE MY MIND WAS MELTING. 
+// Apologies if code is wonky I tried my best
+// TBH I shouldn't have attempted this alone as there are alot of design decisions that you might find weird apologies.
+// Its 12am and i've got to try commiting this bad boy, so all the code below is commented out.
+// All the original code is left in comments above the new functions I wrote (except Divergence whoops), so if it all fucks up then just comment my stuff out.
+// Good luck :3
+
+
+  /*  private void SurfaceVelocityUpdate(GridCell c)
     {
         float p = 0f;
         Dictionary<Vector3Int, float> velocities = new Dictionary<Vector3Int, float>();
         Dictionary<Vector3Int, float> currentVelocities = c.GetVelocities();
-        Dictionary<Vector3Int,GridCell> neighbours = GetNeighbours(c);
+        Dictionary<Vector3Int, GridCell> neighbours = GetNeighbours(c);
         List<GridCell> fluidNeighbours = new List<GridCell>();
         List<Vector3Int> fluidDirections = new List<Vector3Int>();
+        int fluidNeighbourCount = 0;
+        GridCell neighbour;
+        GridCell oppositeNeighbour;
+        Contents contents;
+        for (int i = 0; i < 6; i++)
+        {
+            if (neighbours[basisVectors[i]].GetContents().Equals(Contents.Full) || neighbours[basisVectors[i]].GetContents().Equals(Contents.Surface))
+            {
+                fluidNeighbours.Add(neighbours[basisVectors[i]]);
+                fluidDirections.Add(basisVectors[i]);
+                fluidNeighbourCount++;
+            }
+        }
+        velocities = InstVelocities(new float[] { 0f, 0f, 0f, -9.81f * dt, 0f, 0f });
+        switch (fluidNeighbourCount)
+        {
+            case 0:
+                velocities = currentVelocities;
+                break;
+            case 1:
+                velocities[fluidDirections[0]] += fluidNeighbours[0].GetVelocities()[fluidDirections[0] * -1];
+                velocities[fluidDirections[0] * -1] += fluidNeighbours[0].GetVelocities()[fluidDirections[0] * -1];
+                break;
+            case 2:
+                if (fluidDirections[0] == fluidDirections[1] * -1)
+                {
+                }
+                break;
+            default:
+                break;
+        }
+        c.SetNewVelocities(velocities);
+        c.SetNewPressure(p);
+    }*/
+   
+
+    /*private void SurfaceVelocityUpdate(GridCell c)
+    {
+        float p = 0f;
+        Vector3Int pos = c.GetPos();
+
+        Dictionary<Vector3Int, float> velocities = new Dictionary<Vector3Int, float>();
+        Dictionary<Vector3Int, float> currentVelocities = getCellAllVelocities(pos);
+        Dictionary<Vector3Int, Vector3Int> neighbours = GetNeighbours(pos);
+
+        List<GridCell>   fluidNeighbours   = new List<GridCell>();
+        List<Vector3Int> fluidDirections = new List<Vector3Int>();
+
         int fluidNeighbourCount = 0;
         GridCell neighbour;
         GridCell oppositeNeighbour;
@@ -606,3 +1037,4 @@ public class WaterGrid : MonoBehaviour
         //ParticleLocationUpdate(particle);
     }
 }
+*/
