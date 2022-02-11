@@ -45,22 +45,32 @@ public class VelocityGrid : ScriptableObject
         newCellsVelocities[pos.x, pos.y, pos.z] = vs[basisVectors[0]];
     }
 
+    public void SetNewVelocity(float v, Vector3Int pos)
+    {
+        newCellsVelocities[pos.x, pos.y, pos.z] = v;
+    }
+
     public Dictionary<Vector3Int, float> GetVelocities(Vector3Int pos)
     {
         Dictionary<Vector3Int, float> velocities = new Dictionary<Vector3Int, float>();
-        velocities.Add(Vector3Int.left, cellsVelocities[pos.x, pos.y, pos.z]);
+        velocities.Add(basisVectors[0], cellsVelocities[pos.x, pos.y, pos.z]);
         pos += basisVectors[1];
-        velocities.Add(Vector3Int.right, cellsVelocities[pos.x, pos.y, pos.z]);
+        velocities.Add(basisVectors[1], cellsVelocities[pos.x, pos.y, pos.z]);
         return velocities;
     }
 
     public Dictionary<Vector3Int, float> GetNewVelocities(Vector3Int pos)
     {
         Dictionary<Vector3Int, float> velocities = new Dictionary<Vector3Int, float>();
-        velocities.Add(Vector3Int.left, newCellsVelocities[pos.x, pos.y, pos.z]);
+        velocities.Add(basisVectors[0], newCellsVelocities[pos.x, pos.y, pos.z]);
         pos += basisVectors[1];
-        velocities.Add(Vector3Int.right, newCellsVelocities[pos.x, pos.y, pos.z]);
+        velocities.Add(basisVectors[1], newCellsVelocities[pos.x, pos.y, pos.z]);
         return velocities;
+    }
+
+    public float[,,] GetVelocityGrid()
+    {
+        return cellsVelocities;
     }
 
     public void UpdateVelocities()

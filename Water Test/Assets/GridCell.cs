@@ -14,8 +14,6 @@ public enum Contents
 public class GridCell : ScriptableObject
 {
     private Vector3Int position;
-    private Dictionary<Vector3Int,float> velocities;
-    private Dictionary<Vector3Int, float> newVelocities;
     private float pressure;
     private float newPressure;
     private float divergence;
@@ -24,7 +22,6 @@ public class GridCell : ScriptableObject
     public void Setup(Vector3Int arg_position, float arg_pressure, Contents c)
     {
         position = arg_position;
-        velocities = new Dictionary<Vector3Int, float>();
         pressure = arg_pressure;
         divergence = 0f;
         cellContents = c;
@@ -44,16 +41,6 @@ public class GridCell : ScriptableObject
     public List<Particle> GetParticles()
     {
         return particles;
-    }
-
-    public void SetVelocities(Dictionary<Vector3Int, float> arg_velocities)
-    {
-        velocities = arg_velocities;
-    }
-
-    public Dictionary<Vector3Int, float> GetVelocities()
-    {
-        return velocities;
     }
 
     public Vector3Int GetPos()
@@ -78,17 +65,6 @@ public class GridCell : ScriptableObject
     public void UpdateValues()
     {
         pressure = newPressure;
-        velocities = newVelocities;
-    }
-
-    public void SetNewVelocities(Dictionary<Vector3Int, float> arg_velocities)
-    {
-        newVelocities = arg_velocities;
-    }
-
-    public Dictionary<Vector3Int, float> GetNewVelocities()
-    {
-        return newVelocities;
     }
 
     public void SetNewPressure(float arg_presssure)
