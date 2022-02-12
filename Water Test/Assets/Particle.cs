@@ -21,7 +21,7 @@ public class Particle : ScriptableObject
         WaterParticle.transform.position = position;
     }
 
-    public Vector3 getPosition()
+    public Vector3 GetPosition()
     {
         return position;
     }

@@ -31,18 +31,20 @@ public class VelocityGrid : ScriptableObject
         cellsVelocities[x, y, z] = v;
     }
 
+    //CHANGED cells velocities to be the negative of the basis vector b, since the index is xi-1/2
+
     public void SetVelocities(Dictionary<Vector3Int, float> vs, Vector3Int pos)
     {
-        cellsVelocities[pos.x, pos.y, pos.z] = vs[basisVectors[1]];
+        cellsVelocities[pos.x, pos.y, pos.z] = vs[basisVectors[0]]; //was previously basisVectors[1]
         pos += basisVectors[1];
-        cellsVelocities[pos.x, pos.y, pos.z] = vs[basisVectors[0]];
+        cellsVelocities[pos.x, pos.y, pos.z] = vs[basisVectors[1]]; //was previously basisVectors[0]
     }
 
     public void SetNewVelocities(Dictionary<Vector3Int, float> vs, Vector3Int pos)
     {
-        newCellsVelocities[pos.x, pos.y, pos.z] = vs[basisVectors[1]];
+        newCellsVelocities[pos.x, pos.y, pos.z] = vs[basisVectors[0]]; //was previously basisVector[1]
         pos += basisVectors[1];
-        newCellsVelocities[pos.x, pos.y, pos.z] = vs[basisVectors[0]];
+        newCellsVelocities[pos.x, pos.y, pos.z] = vs[basisVectors[1]]; //was previously basisVector[0]
     }
 
     public void SetNewVelocity(float v, Vector3Int pos)
@@ -71,6 +73,11 @@ public class VelocityGrid : ScriptableObject
     public float[,,] GetVelocityGrid()
     {
         return cellsVelocities;
+    }
+
+    public float[,,] GetNewVelocityGrid()
+    {
+        return newCellsVelocities;
     }
 
     public void UpdateVelocities()
