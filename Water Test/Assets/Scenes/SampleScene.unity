@@ -332,9 +332,18 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   dt: 0.1
   vis: 1.3
-  inflowLocation: {x: 2, y: 2, z: 2}
-  inflowVelocity: 5
-  inflowDirection: {x: 1, y: 1, z: 0}
+  inflowLocations:
+  - {x: 2, y: 2, z: 2}
+  - {x: 3, y: 3, z: 3}
+  - {x: 4, y: 2, z: 3}
+  inflowVelocities:
+  - 5
+  - 5
+  - 5
+  inflowDirections:
+  - {x: 1, y: 1, z: 0}
+  - {x: 0, y: 1, z: 1}
+  - {x: 1, y: 0, z: 1}
   WaterParticle: {fileID: 6614145343580182322, guid: 25540f9af88f57144b83eaef5ffccb78, type: 3}
 --- !u!156049354 &1141257074
 Grid:

@@ -32,9 +32,9 @@ public class WaterGrid : MonoBehaviour
     private float beta;
     private float b_0 = 1.7f;
     private float eps = 0.0001f;
-    public Vector3Int inflowLocation;
-    public float inflowVelocity;
-    public Vector3Int inflowDirection;
+    public Vector3Int[] inflowLocations;
+    public float[] inflowVelocities;
+    public Vector3Int[] inflowDirections;
     [SerializeField] private GameObject WaterParticle;
     private List<Particle> particleList = new List<Particle>();
     private int particleCount;
@@ -58,6 +58,12 @@ public class WaterGrid : MonoBehaviour
     private void Setup()
     {
         float gravityVelocity = (float)(-9.81 * dt);
+        int xInflow;
+        int yInflow;
+        int zInflow;
+        int inflowLocationsSize = inflowLocations.Count();
+        int inflowDirectionsSize = inflowDirections.Count();
+        int inflowVelocitiesSize = inflowVelocities.Count();
 
         for (int x = 0; x < width; x++)
         {
@@ -83,28 +89,37 @@ public class WaterGrid : MonoBehaviour
         cellsVelocities_X.Setup(width + 1, height, depth, 0f, Vector3Int.right);
         cellsVelocities_Y.Setup(width, height + 1, depth, gravityVelocity, Vector3Int.up);
         cellsVelocities_Z.Setup(width, height, depth + 1, 0f, Vector3Int.forward);
-        int xInflow = inflowLocation[0];
-        int yInflow = inflowLocation[1];
-        int zInflow = inflowLocation[2];
 
-        // Need to add inflowDirection
-        if (inflowDirection[0] != 0)
+        if (!((inflowLocationsSize == inflowDirectionsSize) & (inflowLocationsSize == inflowVelocitiesSize)))
         {
-            cellsVelocities_X.SetVelocity(xInflow, yInflow, zInflow, (((inflowDirection[0] + 1) / 2) - 1) * inflowVelocity);
-            cellsVelocities_X.SetVelocity(xInflow + 1, yInflow, zInflow, ((inflowDirection[0] + 1) / 2) * inflowVelocity); // x+1/2
-        }
-        if (inflowDirection[1] != 0)
-        {
-            cellsVelocities_Y.SetVelocity(xInflow, yInflow, zInflow, ((((inflowDirection[1] + 1) / 2) - 1) * inflowVelocity) + gravityVelocity);
-            cellsVelocities_Y.SetVelocity(xInflow, yInflow + 1, zInflow, ((inflowDirection[1] + 1) / 2) * inflowVelocity + gravityVelocity); // x+1/2
-        }
-        if (inflowDirection[2] != 0)
-        {
-            cellsVelocities_Z.SetVelocity(xInflow, yInflow, zInflow, (((inflowDirection[2] + 1) / 2) - 1) * inflowVelocity);
-            cellsVelocities_Z.SetVelocity(xInflow, yInflow, zInflow + 1, ((inflowDirection[2] + 1) / 2) * inflowVelocity); // x+1/2
+            throw new Exception("Inflow sizes do not match");
         }
 
-        gridArray[inflowLocation[0], inflowLocation[1], inflowLocation[2]].SetContents(Contents.Surface);
+        for (int i = 0; i < inflowLocationsSize; i++)
+        {
+            xInflow = inflowLocations[i][0];
+            yInflow = inflowLocations[i][1];
+            zInflow = inflowLocations[i][2];
+
+            // Need to add inflowDirection
+            if (inflowDirections[i][0] != 0)
+            {
+                cellsVelocities_X.SetVelocity(xInflow, yInflow, zInflow, (((inflowDirections[i][0] + 1) / 2) - 1) * inflowVelocities[i]);
+                cellsVelocities_X.SetVelocity(xInflow + 1, yInflow, zInflow, ((inflowDirections[i][0] + 1) / 2) * inflowVelocities[i]); // x+1/2
+            }
+            if (inflowDirections[i][1] != 0)
+            {
+                cellsVelocities_Y.SetVelocity(xInflow, yInflow, zInflow, ((((inflowDirections[i][1] + 1) / 2) - 1) * inflowVelocities[i]) + gravityVelocity);
+                cellsVelocities_Y.SetVelocity(xInflow, yInflow + 1, zInflow, ((inflowDirections[i][1] + 1) / 2) * inflowVelocities[i] + gravityVelocity); // x+1/2
+            }
+            if (inflowDirections[i][2] != 0)
+            {
+                cellsVelocities_Z.SetVelocity(xInflow, yInflow, zInflow, (((inflowDirections[i][2] + 1) / 2) - 1) * inflowVelocities[i]);
+                cellsVelocities_Z.SetVelocity(xInflow, yInflow, zInflow + 1, ((inflowDirections[i][2] + 1) / 2) * inflowVelocities[i]); // x+1/2
+            }
+
+            //gridArray[inflowLocations[i][0], inflowLocations[i][1], inflowLocations[i][2]].SetContents(Contents.Surface);
+        }
     }
 
     private Dictionary<Vector3Int, float> InstVelocities(float[] vs)
@@ -523,6 +538,7 @@ public class WaterGrid : MonoBehaviour
         Dictionary<Vector3Int, float> currentVelocities = GetCellAllVelocities(c);
         Dictionary<Vector3Int, GridCell> neighbours = GetNeighbours(c);
         GridCell neighbour;
+
         velocities = currentVelocities;
 
         for (int i = 0; i < 6; i++)
@@ -537,9 +553,12 @@ public class WaterGrid : MonoBehaviour
             }
         }
 
-        if (c.GetPos().Equals(inflowLocation))
+        for (int i = 0; i < inflowLocations.Count(); i++)
         {
-            velocities = currentVelocities;
+            if (c.GetPos().Equals(inflowLocations[i]))
+            {
+                velocities = currentVelocities;
+            }
         }
         
         cellsVelocities_X.SetNewVelocities(velocities, pos);
@@ -824,7 +843,10 @@ public class WaterGrid : MonoBehaviour
         if (particleCount == 5)
         {
             particleCount = 0;
-            CreateParticle(inflowLocation);
+            for (int i = 0; i < inflowLocations.Count(); i++)
+            {
+                CreateParticle(inflowLocations[i]);
+            }
         }
         CellContents();
         Debug.Log("Update");
