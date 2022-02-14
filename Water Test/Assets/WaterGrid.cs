@@ -719,6 +719,8 @@ public class WaterGrid : MonoBehaviour
         Vector3 v;
         Vector3 newPos;
         Vector3Int cellPos;
+        Vector3Int upperBoundary = new Vector3Int(width - 1, height - 1 , depth - 1);
+        Vector3Int lowerBoundary = new Vector3Int(1, 1, 1);
         Vector3Int particleCellPos = water_grid.LocalToCell(p.GetPosition());
         v = ParticleVelocityUpdate(p);
         Debug.Log(cellsVelocities_X.GetVelocityGrid()[2, 2, 2]);
@@ -729,21 +731,30 @@ public class WaterGrid : MonoBehaviour
         Debug.Log(cellsVelocities_Z.GetVelocityGrid()[2, 3, 2]); 
         newPos = p.GetPosition() + (v * dt);
         cellPos = water_grid.LocalToCell(newPos);
-        Debug.Log(v); 
-
-        if (cellPos[0] >= width-1 || cellPos[0] <= 0)
+        Debug.Log("Particle Velocity: " + v);
+        Debug.Log("Cell Pos: " + cellPos);
+        if (cellPos[0] >= width-1)
         {
-            v[0] = 0f;
-        }
-        if (cellPos[1] >= height - 1 || cellPos[1] <= 0)
+            newPos[0] = water_grid.CellToLocal(upperBoundary)[0];
+        }else if (cellPos[0] <= 0)
         {
-            v[1] = 0f;
+            newPos[0] = water_grid.CellToLocal(lowerBoundary)[0];
         }
-        if (cellPos[2] >= depth - 1 || cellPos[2] <= 0)
+        if (cellPos[1] >= height - 1)
         {
-            v[2] = 0f;
+            newPos[1] = water_grid.CellToLocal(upperBoundary)[1];
+        }else if (cellPos[1] <= 0) 
+        {
+            newPos[1] = water_grid.CellToLocal(lowerBoundary)[1];
         }
-        newPos = p.GetPosition() + (v * dt);
+        if (cellPos[2] >= depth - 1)
+        {
+            newPos[2] = water_grid.CellToLocal(upperBoundary)[2];
+        }else if (cellPos[2] <= 0)
+        {
+            newPos[2] = water_grid.CellToLocal(lowerBoundary)[2];
+        }
+        Debug.Log("Particle Velocity: " + v);
         cellPos = water_grid.LocalToCell(newPos);
         gridArray[particleCellPos.x, particleCellPos.y, particleCellPos.z].RemoveParticle(p);
         gridArray[cellPos.x, cellPos.y, cellPos.z].AddParticle(p);
@@ -810,7 +821,7 @@ public class WaterGrid : MonoBehaviour
     public void FixedUpdate()
     {
         particleCount++;
-        if (particleCount == 5)
+        if (particleCount == 50)
         {
             particleCount = 0;
             CreateParticle(inflowLocation);
