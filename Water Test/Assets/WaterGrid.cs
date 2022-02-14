@@ -121,10 +121,10 @@ public class WaterGrid : MonoBehaviour
     {
         Particle p;
         Vector3 localPosition;
-        localPosition = water_grid.CellToLocal(position);
+        localPosition = water_grid.CellToLocal(position) + new Vector3(dx/2, dy/2, dz/2);
         GameObject particleObject = Instantiate(WaterParticle, localPosition, Quaternion.identity);
         p = ScriptableObject.CreateInstance<Particle>();
-        p.Setup(water_grid.CellToLocal(position), particleObject);
+        p.Setup(localPosition, particleObject);
         particleList.Add(p);
         gridArray[position.x, position.y, position.z].AddParticle(p);
     }
@@ -821,7 +821,7 @@ public class WaterGrid : MonoBehaviour
     public void FixedUpdate()
     {
         particleCount++;
-        if (particleCount == 50)
+        if (particleCount == 5)
         {
             particleCount = 0;
             CreateParticle(inflowLocation);
