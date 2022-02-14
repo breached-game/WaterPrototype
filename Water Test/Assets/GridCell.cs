@@ -82,3 +82,4 @@ public class GridCell : ScriptableObject
         cellContents = c;
     }
 }
+
