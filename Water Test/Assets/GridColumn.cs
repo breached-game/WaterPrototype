@@ -49,7 +49,10 @@ public class GridColumn : ScriptableObject
 
     public void SetColumn()
     {
-        waterColumn.transform.localScale = new Vector3(0f, h, 0f);
+        waterColumn.transform.localScale = new Vector3(0.2f, 0.2f * h, 0.2f);
+        waterColumn.transform.position = new Vector3(position.x * 0.2f, (0.2f * h) / 2, position.y * 0.2f);
+        Debug.Log("Position: " + position);
+        Debug.Log("Depth: " + h);
     }
 }
 

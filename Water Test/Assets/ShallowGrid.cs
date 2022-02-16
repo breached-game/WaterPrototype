@@ -92,7 +92,7 @@ public class ShallowGrid : MonoBehaviour
             }
             if (inflowDirections[i][1] != 0)
             {
-                gridArray[xInflow, zInflow].Seth(yInflow - 1); //-1 cause H right now is 1
+                gridArray[xInflow, zInflow].Seth(yInflow - 1); //-1 because H right now is 1
             }
             if (inflowDirections[i][2] != 0)
             {
@@ -122,11 +122,14 @@ public class ShallowGrid : MonoBehaviour
         {
             for (int z = 0; z < depth - 1; z++)
             {
-                X_velocity = -gravity * ((gridArray[x + 1, z].Geth() - gridArray[x, z].Geth()) / dx);
-                Z_velocity = -gravity * ((gridArray[x, z].Geth() - gridArray[x, z + 1].Geth()) / dz);
+                if (!(inflowLocations[0].Equals(new Vector3Int(x, inflowLocations[0].y , z))))
+                {
+                    X_velocity = ((gridArray[x + 1, z].Geth() - gridArray[x, z].Geth()) / dx);
+                    Z_velocity = ((gridArray[x, z].Geth() - gridArray[x, z + 1].Geth()) / dz);
 
-                cellsVelocities_X.SetNewVelocity(X_velocity, new Vector2Int(x, z));
-                cellsVelocities_Z.SetNewVelocity(Z_velocity, new Vector2Int(x, z));
+                    cellsVelocities_X.SetNewVelocity(cellsVelocities_X.GetVelocityGrid()[x, z] + X_velocity * dt, new Vector2Int(x, z));
+                    cellsVelocities_Z.SetNewVelocity(cellsVelocities_Z.GetVelocityGrid()[x, z] + Z_velocity * dt, new Vector2Int(x, z));
+                }
             }
         }
     }
@@ -135,18 +138,25 @@ public class ShallowGrid : MonoBehaviour
     {
         float newEta;
         float newh;
+        Vector2Int position;
+
         SetVelocities();
         foreach (GridColumn c in gridArray)
         {
-            newEta = EtaUpdate(c) * dt;
-            newh = newEta - c.GetH();
-            c.SetNewh((int) Math.Floor(newh));
-            c.UpdateValues();
+            position = c.GetPos();
+            if (!(position.x == 0 || position.y == 0 || position.x == width - 1 || position.y == depth - 1))
+            {
+                newEta = c.Geth() + c.GetH() + EtaUpdate(c) * dt;
+                newh = newEta - c.GetH();
+                c.SetNewh((int)Math.Floor(newh));
+                c.UpdateValues();
+            }
         }
         cellsVelocities_X.UpdateVelocities();
         cellsVelocities_Z.UpdateVelocities();
         foreach (GridColumn c in gridArray)
         {
+            Debug.Log("Current h: " + c.Geth());
             c.SetColumn();
         }
     }

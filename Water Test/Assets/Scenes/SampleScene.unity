@@ -330,9 +330,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   dt: 0.05
-  inflowLocations: []
-  inflowVelocities: []
-  inflowDirections: []
+  inflowLocations:
+  - {x: 2, y: 8, z: 2}
+  inflowVelocities:
+  - 0.5
+  inflowDirections:
+  - {x: 1, y: 0, z: 1}
   columnMesh: {fileID: 4715588373200867997, guid: eba5625a7e97c9b4393e7cf784423b38, type: 3}
 --- !u!156049354 &1141257074
 Grid:
