@@ -5,16 +5,20 @@ using UnityEngine;
 public class GridColumn : ScriptableObject
 {
     private Vector2Int position;
+    private Vector3 localPosition;
+    private float cellSize;
     private float h;
     private float H;
     private float newh;
     private GameObject waterColumn;
     private Dictionary<Vector2Int, float> newOutflows;
     private Dictionary<Vector2Int, float> outflows;
-    public void Setup(Vector2Int arg_position, float arg_H, GameObject column)
+    public void Setup(Vector2Int arg_position, Vector3 arg_localPosition, float arg_H, GameObject column, float arg_cellSize)
     {
         waterColumn = column;
         position = arg_position;
+        localPosition = arg_localPosition;
+        cellSize = arg_cellSize;
         H = arg_H;
         h = 0f;
         outflows = new Dictionary<Vector2Int, float>();
@@ -42,7 +46,14 @@ public class GridColumn : ScriptableObject
 
     public void SetNewh(float arg_h)
     {
-        newh = arg_h;
+        if (arg_h < 0)
+        {
+            newh = 0;
+        }
+        else
+        {
+            newh = arg_h;
+        }
     }
 
     public float Geth()
@@ -67,8 +78,8 @@ public class GridColumn : ScriptableObject
             Debug.Log(position);
             Debug.Log("Depth: " + h);
         }
-        waterColumn.transform.localScale = new Vector3(0.2f, 0.2f * h, 0.2f);
-        waterColumn.transform.position = new Vector3(position.x * 0.2f, (0.2f * (h + H)) / 2, position.y * 0.2f);
+        waterColumn.transform.localScale = new Vector3(cellSize, cellSize * h, cellSize);
+        waterColumn.transform.position = new Vector3(localPosition.x, localPosition.y + (cellSize * (h + H)) / 2, localPosition.z);
         //Debug.Log("Position: " + position);
         //Debug.Log("Depth: " + h);
     }

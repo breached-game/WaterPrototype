@@ -8,19 +8,17 @@ public class WaterGrid : MonoBehaviour
 {
     private Grid water_grid;
     private GridColumn[,] gridArray;
-    private int width = 60;
-    private int height = 60;
-    private int depth = 60;
-    private float dz;
+    public int width = 60;
+    public int height = 60;
+    public int depth = 60;
+    private bool inflow;
     private float dx;
     private float cellSize;
+    public float inflowRate;
+    public float gravity;
     public float dt = 0.05f;
     public GameObject columnMesh;
     public Vector3Int[] inflowLocations;
-
-    private Vector3Int[] basisVectors = new Vector3Int[6] { Vector3Int.right, Vector3Int.left,
-        Vector3Int.up, Vector3Int.down, Vector3Int.forward, Vector3Int.back};
-
 
     void Awake()
     {
@@ -29,21 +27,21 @@ public class WaterGrid : MonoBehaviour
         water_grid = gameObject.GetComponent<Grid>();
         cellSize = water_grid.cellSize[0];
         dx = cellSize;
-        dz = cellSize;
+        inflow = true;
         gridArray = new GridColumn[width, depth];
         for (int x = 0; x < width; x++)
         {
             for (int z = 0; z < depth; z++)
             {
                 GridColumn column = ScriptableObject.CreateInstance<GridColumn>();
-                mesh = GameObject.Instantiate(columnMesh, water_grid.CellToLocal(new Vector3Int(x, 0, z)), Quaternion.identity);
+                mesh = GameObject.Instantiate(columnMesh, water_grid.CellToLocal(new Vector3Int(x, 0, z)) + gameObject.transform.position, Quaternion.identity);
                 if (x > 5)
                 {
-                    column.Setup(new Vector2Int(x, z), 0, mesh);
+                    column.Setup(new Vector2Int(x, z), water_grid.CellToLocal(new Vector3Int(x, 0, z)) + gameObject.transform.position, 0, mesh, cellSize);
                 }
                 else 
                 { 
-                    column.Setup(new Vector2Int(x, z), 0, mesh); 
+                    column.Setup(new Vector2Int(x, z), water_grid.CellToLocal(new Vector3Int(x, 0, z)) + gameObject.transform.position, 0, mesh, cellSize); 
                 }
                 gridArray[x, z] = column;
             }
@@ -85,7 +83,7 @@ public class WaterGrid : MonoBehaviour
     public void FixedUpdate()
     {
         float dhL, dhR, dhT, dhB;
-        float dt_A_g_l = dt * Mathf.Pow(dx, 2) * 3f / dx;
+        float dt_A_g_l = dt * Mathf.Pow(dx, 2) * gravity / dx;
         float K;
         float dV;
         float totalHeight;
@@ -94,17 +92,16 @@ public class WaterGrid : MonoBehaviour
         GridColumn currentColumn;
 
         int xInflow;
-        int yInflow;
         int zInflow;
         int inflowLocationsSize = inflowLocations.Length;
-
-        for (int i = 0; i < inflowLocationsSize; i++)
+        if (inflow)
         {
-            xInflow = inflowLocations[i][0];
-            yInflow = inflowLocations[i][1];
-            zInflow = inflowLocations[i][2];
-
-            gridArray[xInflow, zInflow].Seth(gridArray[xInflow, zInflow].Geth() + 100f * dt);
+            for (int i = 0; i < inflowLocationsSize; i++)
+            {
+                xInflow = inflowLocations[i][0];
+                zInflow = inflowLocations[i][2];
+                gridArray[xInflow, zInflow].Seth(gridArray[xInflow, zInflow].Geth() + inflowRate * dt);
+            }
         }
 
 
@@ -161,7 +158,15 @@ public class WaterGrid : MonoBehaviour
                 currentColumn = gridArray[x, z];
                 dV = dt * (SumInflows(currentColumn) - currentColumn.GetNewOutflows().Sum(x => x.Value));
                 // May want to change from int
-                currentColumn.SetNewh(currentColumn.Geth() + dV / (dx * dx));            
+                if (currentColumn.Geth() + dV / (dx * dx) + currentColumn.GetH() >= height)
+                {
+                    inflow = false;
+                    currentColumn.SetNewh(height - currentColumn.GetH() - 1);
+                }
+                else
+                {
+                    currentColumn.SetNewh(currentColumn.Geth() + dV / (dx * dx));
+                }           
             }
         }
         foreach (GridColumn column in gridArray)
