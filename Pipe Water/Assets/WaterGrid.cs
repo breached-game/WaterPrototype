@@ -7,7 +7,7 @@ using System.Linq;
 public class WaterGrid : MonoBehaviour
 {
     private Grid water_grid;
-    private GridColumn[,] gridArray;
+    private GridVertex[,] gridArray;
     public int width = 60;
     public int height = 60;
     public int depth = 60;
@@ -17,35 +17,60 @@ public class WaterGrid : MonoBehaviour
     public float inflowRate;
     public float gravity;
     public float dt = 0.05f;
-    public GameObject columnMesh;
+    public Mesh columnMesh;
+    private MeshFilter meshFilter;
     public Vector3Int[] inflowLocations;
 
     void Awake()
     {
-        GameObject mesh;
+        int[] triangles = new int[(height) * (depth) * 6];
+        Vector3[] vertices = new Vector3[width * depth];
+        int vCount = 0;
+        meshFilter = gameObject.GetComponent<MeshFilter>();
+        meshFilter.mesh = columnMesh = new Mesh();
+        columnMesh.name = "Water Mesh";
         Time.fixedDeltaTime = dt;
         water_grid = gameObject.GetComponent<Grid>();
         cellSize = water_grid.cellSize[0];
         dx = cellSize;
         inflow = true;
-        gridArray = new GridColumn[width, depth];
+        gridArray = new GridVertex[width, depth];
         for (int x = 0; x < width; x++)
         {
             for (int z = 0; z < depth; z++)
             {
-                GridColumn column = ScriptableObject.CreateInstance<GridColumn>();
-                mesh = GameObject.Instantiate(columnMesh, water_grid.CellToLocal(new Vector3Int(x, 0, z)) + gameObject.transform.position, Quaternion.identity);
-                if (x > 5)
-                {
-                    column.Setup(new Vector2Int(x, z), water_grid.CellToLocal(new Vector3Int(x, 0, z)) + gameObject.transform.position, 0, mesh, cellSize);
-                }
-                else 
-                { 
-                    column.Setup(new Vector2Int(x, z), water_grid.CellToLocal(new Vector3Int(x, 0, z)) + gameObject.transform.position, 0, mesh, cellSize); 
-                }
+                GridVertex column = ScriptableObject.CreateInstance<GridVertex>();
+                column.Setup(new Vector2Int(x, z), water_grid.CellToLocal(new Vector3Int(x, 0, z)) + gameObject.transform.position, 0, cellSize);
                 gridArray[x, z] = column;
             }
         }
+        /*
+        foreach (GridVertex v in gridArray)
+        {
+            vertices[vCount] = v.GetVertexPosition();
+        }
+        for (int z = 0, vi = 0, ti = 0; z < depth - 1; z++, vi++)
+        {
+            for (int x = 0; x < width - 1; x++, ti += 6, vi++)
+            {
+
+                triangles[ti] = vi;
+                
+                
+                triangles[ti + 1] = triangles[ti + 3] = vi + 1;
+                
+                
+                triangles[ti + 2] = triangles[ti + 5] = vi + width;
+                
+                
+                triangles[ti + 4] = vi + width + 1;
+                
+            }
+        }
+        columnMesh.vertices = vertices;
+        columnMesh.triangles = triangles;
+        columnMesh.RecalculateNormals();
+        */
         Setup();
     }
 
@@ -66,7 +91,7 @@ public class WaterGrid : MonoBehaviour
         }
     }
 
-    private float SumInflows(GridColumn currentColumn)
+    private float SumInflows(GridVertex currentColumn)
     {
         float iR;
         float iL;
@@ -88,8 +113,11 @@ public class WaterGrid : MonoBehaviour
         float dV;
         float totalHeight;
         float totalFlux;
+        int vCount = 0;
+        List<Vector3> vertices = new List<Vector3>();
+        List<int> triangles = new List<int>();
         Dictionary<Vector2Int, float> tempFlux = new Dictionary<Vector2Int, float>();
-        GridColumn currentColumn;
+        GridVertex currentColumn;
 
         int xInflow;
         int zInflow;
@@ -169,12 +197,61 @@ public class WaterGrid : MonoBehaviour
                 }           
             }
         }
-        foreach (GridColumn column in gridArray)
+
+        for (int x = 1; x < width - 1; x++)
+        {
+            for (int z = 1; z < height - 1; z++)
+            {
+                currentColumn = gridArray[x, z];
+                currentColumn.UpdateValues();
+                if (currentColumn.isVertex)
+                {
+                    vertices.Add(currentColumn.GetVertexPosition());
+                    currentColumn.vertex = vCount;
+                    vCount++;
+                }
+            }
+        }
+        columnMesh.Clear();
+        columnMesh.SetVertices(vertices);
+        for (int x = 1; x < width - 1; x++)
+        {
+            for (int z = 1; z < height - 1; z++)
+            {
+                currentColumn = gridArray[x, z];
+                if (currentColumn.isVertex)
+                {
+                    if (x != width - 1 & z != depth -1)
+                    {
+                        if (gridArray[x + 1, z].isVertex & gridArray[x, z+1].isVertex)
+                        {
+                            triangles.Add(currentColumn.vertex);
+                            triangles.Add(gridArray[x, z + 1].vertex);
+                            triangles.Add(gridArray[x + 1,z].vertex);
+                        }
+                    }
+                    if (x != 1 & z != depth - 1)
+                    {
+                        if (gridArray[x - 1, z + 1].isVertex & gridArray[x, z + 1].isVertex)
+                        {
+                            triangles.Add(currentColumn.vertex);
+                            triangles.Add(gridArray[x - 1, z + 1].vertex);
+                            triangles.Add(gridArray[x, z + 1].vertex);
+                        }
+                    }
+                }
+            }
+        }
+        /*
+        foreach (GridVertex column in gridArray)
         {
             column.UpdateValues();
-            column.SetColumn();
+            vertices[vCount] = column.GetVertexPosition();
+            vCount++;
         }
-
+        */
+        columnMesh.SetTriangles(triangles, 0);
+        columnMesh.RecalculateNormals();
     }
 
 }
