@@ -293,7 +293,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 963194225}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 1, z: -10}
+  m_LocalPosition: {x: 0, y: -7.14, z: -10}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
@@ -331,16 +331,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6c47ef931b7dd744d829a68c27c92cc0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  width: 100
-  height: 100
-  depth: 100
-  inflowRate: 500
+  width: 60
+  height: 60
+  depth: 60
+  inflowRate: 100
   gravity: 3
   dt: 0.05
   columnMesh: {fileID: 3636839361221879802, guid: 625475178c1df744986134d0dfa5e7e9, type: 3}
   inflowLocations:
-  - {x: 3, y: 30, z: 5}
-  - {x: 25, y: 30, z: 25}
+  - {x: 3, y: 15, z: 5}
+  - {x: 25, y: 15, z: 25}
 --- !u!156049354 &1177789271
 Grid:
   m_ObjectHideFlags: 0
