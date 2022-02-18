@@ -23,9 +23,6 @@ public class WaterGrid : MonoBehaviour
 
     void Awake()
     {
-        int[] triangles = new int[(height) * (depth) * 6];
-        Vector3[] vertices = new Vector3[width * depth];
-        int vCount = 0;
         meshFilter = gameObject.GetComponent<MeshFilter>();
         meshFilter.mesh = columnMesh = new Mesh();
         columnMesh.name = "Water Mesh";
@@ -41,36 +38,14 @@ public class WaterGrid : MonoBehaviour
             {
                 GridVertex column = ScriptableObject.CreateInstance<GridVertex>();
                 column.Setup(new Vector2Int(x, z), water_grid.CellToLocal(new Vector3Int(x, 0, z)) + gameObject.transform.position, 0, cellSize);
+                if (x == 0 || z == 0 || x == width -1 || z == depth -1)
+                {
+                    column.boundary = true;
+                    column.isVertex = true;
+                }
                 gridArray[x, z] = column;
             }
         }
-        /*
-        foreach (GridVertex v in gridArray)
-        {
-            vertices[vCount] = v.GetVertexPosition();
-        }
-        for (int z = 0, vi = 0, ti = 0; z < depth - 1; z++, vi++)
-        {
-            for (int x = 0; x < width - 1; x++, ti += 6, vi++)
-            {
-
-                triangles[ti] = vi;
-                
-                
-                triangles[ti + 1] = triangles[ti + 3] = vi + 1;
-                
-                
-                triangles[ti + 2] = triangles[ti + 5] = vi + width;
-                
-                
-                triangles[ti + 4] = vi + width + 1;
-                
-            }
-        }
-        columnMesh.vertices = vertices;
-        columnMesh.triangles = triangles;
-        columnMesh.RecalculateNormals();
-        */
         Setup();
     }
 
@@ -198,9 +173,9 @@ public class WaterGrid : MonoBehaviour
             }
         }
 
-        for (int x = 1; x < width - 1; x++)
+        for (int x = 0; x < width; x++)
         {
-            for (int z = 1; z < height - 1; z++)
+            for (int z = 0; z < height; z++)
             {
                 currentColumn = gridArray[x, z];
                 currentColumn.UpdateValues();
@@ -214,14 +189,14 @@ public class WaterGrid : MonoBehaviour
         }
         columnMesh.Clear();
         columnMesh.SetVertices(vertices);
-        for (int x = 1; x < width - 1; x++)
+        for (int x = 0; x < width; x++)
         {
-            for (int z = 1; z < height - 1; z++)
+            for (int z = 0; z < depth; z++)
             {
                 currentColumn = gridArray[x, z];
                 if (currentColumn.isVertex)
                 {
-                    if (x != width - 1 & z != depth -1)
+                    if (x != width - 1 & z != depth - 1)
                     {
                         if (gridArray[x + 1, z].isVertex & gridArray[x, z+1].isVertex)
                         {
@@ -230,7 +205,7 @@ public class WaterGrid : MonoBehaviour
                             triangles.Add(gridArray[x + 1,z].vertex);
                         }
                     }
-                    if (x != 1 & z != depth - 1)
+                    if (x != 0 & z != depth - 1)
                     {
                         if (gridArray[x - 1, z + 1].isVertex & gridArray[x, z + 1].isVertex)
                         {
@@ -242,14 +217,6 @@ public class WaterGrid : MonoBehaviour
                 }
             }
         }
-        /*
-        foreach (GridVertex column in gridArray)
-        {
-            column.UpdateValues();
-            vertices[vCount] = column.GetVertexPosition();
-            vCount++;
-        }
-        */
         columnMesh.SetTriangles(triangles, 0);
         columnMesh.RecalculateNormals();
     }

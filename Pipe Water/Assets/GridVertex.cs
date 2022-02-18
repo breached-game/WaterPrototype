@@ -14,6 +14,7 @@ public class GridVertex : ScriptableObject
     private Dictionary<Vector2Int, float> outflows;
     public int vertex;
     public bool isVertex = false;
+    public bool boundary = false;
     public void Setup(Vector2Int arg_position, Vector3 arg_localPosition, float arg_H, float arg_cellSize)
     {
         position = arg_position;
@@ -40,7 +41,7 @@ public class GridVertex : ScriptableObject
     public void UpdateValues()
     {
         h = newh;
-        if (h > 0)
+        if (h > 0 || boundary)
         {
             isVertex = true;
         }
