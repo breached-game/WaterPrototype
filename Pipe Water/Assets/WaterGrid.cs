@@ -8,6 +8,7 @@ public class WaterGrid : MonoBehaviour
 {
     private Grid water_grid;
     private GridVertex[,] gridArray;
+    private float[,] terrain;
     public int width = 60;
     public int height = 60;
     public int depth = 60;
@@ -32,13 +33,15 @@ public class WaterGrid : MonoBehaviour
         dx = cellSize;
         inflow = true;
         gridArray = new GridVertex[width, depth];
+        terrain = new float[width, depth];
+        InitialiseTerrain();
         for (int x = 0; x < width; x++)
         {
             for (int z = 0; z < depth; z++)
             {
                 GridVertex column = ScriptableObject.CreateInstance<GridVertex>();
-                column.Setup(new Vector2Int(x, z), water_grid.CellToLocal(new Vector3Int(x, 0, z)) + gameObject.transform.position, 0, cellSize);
-                if (x == 0 || z == 0 || x == width -1 || z == depth -1)
+                column.Setup(new Vector2Int(x, z), water_grid.CellToLocal(new Vector3Int(x, 0, z)) + gameObject.transform.position, terrain[x, z], cellSize);
+                if (x == 0 || z == 0 || x == width - 1 || z == depth - 1)
                 {
                     column.boundary = true;
                     column.isVertex = true;
@@ -63,6 +66,32 @@ public class WaterGrid : MonoBehaviour
             zInflow = inflowLocations[i][2];
 
             gridArray[xInflow, zInflow].Seth(yInflow);
+        }
+    }
+
+    private void InitialiseTerrain()
+    {
+        for (int x = 0; x < width; x++)
+        {
+            for (int z = 0; z < depth; z++)
+            {
+                terrain[x, z] = 0f;
+            }
+        }
+    }
+
+    private void OnTriggerEnter(Collider other)
+    {
+        Vector3Int cellPos = water_grid.LocalToCell(other.gameObject.transform.position);
+        Vector3Int cellWidth = water_grid.LocalToCell(other.gameObject.transform.localScale / 2);
+        print(cellWidth);
+        for (int x = cellPos.x - cellWidth.x + 1; x < cellPos.x + cellWidth.x; x++)
+        {
+            for (int z = cellPos.z - cellWidth.z + 1; z < cellPos.z + cellWidth.z; z++)
+            {
+                print(cellWidth.y + cellPos.y);
+                gridArray[x, z].SetH(cellWidth.y + cellPos.y);
+            }
         }
     }
 
@@ -129,7 +158,7 @@ public class WaterGrid : MonoBehaviour
                 {
                     tempFlux[Vector2Int.left] = 0f;
                 }
-                else if(x == width - 2)
+                else if (x == width - 2)
                 {
                     tempFlux[Vector2Int.right] = 0f;
                 }
@@ -137,7 +166,7 @@ public class WaterGrid : MonoBehaviour
                 {
                     tempFlux[Vector2Int.down] = 0f;
                 }
-                else if(z == height - 2)
+                else if (z == height - 2)
                 {
                     tempFlux[Vector2Int.up] = 0f;
                 }
@@ -160,7 +189,6 @@ public class WaterGrid : MonoBehaviour
             {
                 currentColumn = gridArray[x, z];
                 dV = dt * (SumInflows(currentColumn) - currentColumn.GetNewOutflows().Sum(x => x.Value));
-                // May want to change from int
                 if (currentColumn.Geth() + dV / (dx * dx) + currentColumn.GetH() >= height)
                 {
                     inflow = false;
@@ -198,7 +226,7 @@ public class WaterGrid : MonoBehaviour
                 {
                     if (x != width - 1 & z != depth - 1)
                     {
-                        if (gridArray[x + 1, z].isVertex & gridArray[x, z+1].isVertex)
+                        if (gridArray[x + 1, z].isVertex & gridArray[x, z + 1].isVertex)
                         {
                             triangles.Add(currentColumn.vertex);
                             triangles.Add(gridArray[x, z + 1].vertex);

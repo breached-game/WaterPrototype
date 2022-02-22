@@ -15,6 +15,7 @@ public class GridVertex : ScriptableObject
     public int vertex;
     public bool isVertex = false;
     public bool boundary = false;
+
     public void Setup(Vector2Int arg_position, Vector3 arg_localPosition, float arg_H, float arg_cellSize)
     {
         position = arg_position;
@@ -78,6 +79,12 @@ public class GridVertex : ScriptableObject
     {
         return H;
     }
+
+    public void SetH(float arg_H)
+    {
+        H = arg_H;
+    }
+
     public Dictionary<Vector2Int, float> GetNewOutflows()
     {
         return newOutflows;
