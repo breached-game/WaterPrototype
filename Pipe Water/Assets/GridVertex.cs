@@ -22,17 +22,17 @@ public class GridVertex : ScriptableObject
         localPosition = arg_localPosition;
         cellSize = arg_cellSize;
         H = arg_H;
-        h = 0f;
+        h = 0.0f;
         outflows = new Dictionary<Vector2Int, float>();
-        outflows.Add(Vector2Int.right, 0f);
-        outflows.Add(Vector2Int.left, 0f);
-        outflows.Add(Vector2Int.up, 0f);
-        outflows.Add(Vector2Int.down, 0f);
+        outflows.Add(Vector2Int.right, 0.0f);
+        outflows.Add(Vector2Int.left, 0.0f);
+        outflows.Add(Vector2Int.up, 0.0f);
+        outflows.Add(Vector2Int.down, 0.0f);
         newOutflows = new Dictionary<Vector2Int, float>();
-        newOutflows.Add(Vector2Int.right, 0f);
-        newOutflows.Add(Vector2Int.left, 0f);
-        newOutflows.Add(Vector2Int.up, 0f);
-        newOutflows.Add(Vector2Int.down, 0f);
+        newOutflows.Add(Vector2Int.right, 0.0f);
+        newOutflows.Add(Vector2Int.left, 0.0f);
+        newOutflows.Add(Vector2Int.up, 0.0f);
+        newOutflows.Add(Vector2Int.down, 0.0f);
     }
     public Vector2Int GetPos()
     {
