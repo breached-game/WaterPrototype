@@ -15,23 +15,24 @@ public class GridVertex : ScriptableObject
     public int vertex;
     public bool isVertex = false;
     public bool boundary = false;
+
     public void Setup(Vector2Int arg_position, Vector3 arg_localPosition, float arg_H, float arg_cellSize)
     {
         position = arg_position;
         localPosition = arg_localPosition;
         cellSize = arg_cellSize;
         H = arg_H;
-        h = 0f;
+        h = 0.0f;
         outflows = new Dictionary<Vector2Int, float>();
-        outflows.Add(Vector2Int.right, 0f);
-        outflows.Add(Vector2Int.left, 0f);
-        outflows.Add(Vector2Int.up, 0f);
-        outflows.Add(Vector2Int.down, 0f);
+        outflows.Add(Vector2Int.right, 0.0f);
+        outflows.Add(Vector2Int.left, 0.0f);
+        outflows.Add(Vector2Int.up, 0.0f);
+        outflows.Add(Vector2Int.down, 0.0f);
         newOutflows = new Dictionary<Vector2Int, float>();
-        newOutflows.Add(Vector2Int.right, 0f);
-        newOutflows.Add(Vector2Int.left, 0f);
-        newOutflows.Add(Vector2Int.up, 0f);
-        newOutflows.Add(Vector2Int.down, 0f);
+        newOutflows.Add(Vector2Int.right, 0.0f);
+        newOutflows.Add(Vector2Int.left, 0.0f);
+        newOutflows.Add(Vector2Int.up, 0.0f);
+        newOutflows.Add(Vector2Int.down, 0.0f);
     }
     public Vector2Int GetPos()
     {
@@ -78,6 +79,12 @@ public class GridVertex : ScriptableObject
     {
         return H;
     }
+
+    public void SetH(float arg_H)
+    {
+        H = arg_H;
+    }
+
     public Dictionary<Vector2Int, float> GetNewOutflows()
     {
         return newOutflows;
