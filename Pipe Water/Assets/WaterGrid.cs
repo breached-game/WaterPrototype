@@ -80,6 +80,19 @@ public class WaterGrid : MonoBehaviour
         }
     }
 
+    public void RemoveObject(GameObject obj)
+    {
+        Vector3Int cellPos = water_grid.LocalToCell(obj.gameObject.transform.position);
+        Vector3Int cellWidth = water_grid.LocalToCell(obj.gameObject.transform.localScale / 2);
+        for (int x = cellPos.x - cellWidth.x + 1; x < cellPos.x + cellWidth.x; x++)
+        {
+            for (int z = cellPos.z - cellWidth.z + 1; z < cellPos.z + cellWidth.z; z++)
+            {
+                gridArray[x, z].SetH(0);
+            }
+        }
+    }
+
     private float SumInflows(GridVertex currentColumn)
     {
         float iR = 0.0f;
